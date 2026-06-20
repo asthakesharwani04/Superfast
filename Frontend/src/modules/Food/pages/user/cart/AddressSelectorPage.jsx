@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef, useCallback } from "react"
+﻿import { useMemo, useState, useEffect, useRef, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import { ChevronLeft, ChevronRight, Plus, MapPin, MoreHorizontal, Navigation, Home, Building2, Briefcase, Phone, X, Crosshair, Search, Edit2, Trash2 } from "lucide-react"
 import { Button } from "@food/components/ui/button"
@@ -500,7 +500,7 @@ export default function AddressSelectorPage() {
       const response = await fetch(url, { 
         headers: { 
           "Accept-Language": "en",
-          "User-Agent": "AppZeto-Food-App" 
+          "User-Agent": "superfast-food-App" 
         } 
       })
       const json = await response.json()
@@ -822,7 +822,7 @@ export default function AddressSelectorPage() {
             <div>
               <Label className="text-sm font-bold mb-2 block text-orange-600 dark:text-orange-400">Secondary Address (House No. / Flat / Floor)</Label>
               <Input 
-                placeholder="E.g. Flat 402, 4th Floor, AppZeto Building" 
+                placeholder="E.g. Flat 402, 4th Floor, SUPERFAST Building" 
                 value={addressFormData.additionalDetails} 
                 onChange={e => setAddressFormData({...addressFormData, additionalDetails: e.target.value.replace(/[^a-zA-Z0-9\s]/g, "")})}
                 onFocus={() => scrollFieldIntoView("additionalDetails")}

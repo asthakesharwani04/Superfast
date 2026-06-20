@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+﻿import React, { useState, useMemo, useEffect, useRef } from "react";
 import Card from "@shared/components/ui/Card";
 import Button from "@shared/components/ui/Button";
 import Badge from "@shared/components/ui/Badge";
@@ -486,8 +486,8 @@ const Orders = () => {
       // Add title
       doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(12, 131, 31); // OyeChotuu Green
-      doc.text('OyeChotuu', 148, 15, { align: 'center' });
+      doc.setTextColor(12, 131, 31); // Superfast Green
+      doc.text('Superfast', 148, 15, { align: 'center' });
 
       doc.setFontSize(14);
       doc.setTextColor(30, 30, 30);

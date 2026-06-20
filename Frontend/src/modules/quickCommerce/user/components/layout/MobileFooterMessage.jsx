@@ -1,9 +1,9 @@
-import React from 'react';
+﻿import React from 'react';
 import { useSettings } from '@core/context/SettingsContext';
 
 const MobileFooterMessage = () => {
     const { settings } = useSettings();
-    const appName = settings?.appName || 'ChotuuMart';
+    const appName = settings?.appName || 'SuperfastMart';
     return (
         <div className="md:hidden w-full flex flex-col items-center -mt-8 pt-0 pb-28 px-6 bg-transparent">
             <style>{`
@@ -26,7 +26,7 @@ const MobileFooterMessage = () => {
                 <div className="w-full h-[1px] bg-slate-200 mt-2 mb-4"></div>
 
                 <div className="text-slate-300 font-black text-2xl tracking-tighter text-left">
-                    OyeChotuu
+                    Superfast
                 </div>
             </div>
         </div>

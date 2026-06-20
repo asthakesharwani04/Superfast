@@ -29,13 +29,6 @@ export default function ServiceUnavailable({ type = "zone", moduleName = "", onR
         icon: <MapPinOff className="w-16 h-16 text-green-500" />
       };
     }
-    if (moduleName.toLowerCase().includes('milk') || moduleName.toLowerCase().includes('dudhwala')) {
-      return {
-        title: "Coming Soon!",
-        desc: "Chotuu aapke yahan abhi nahi aaya, par subah-subah fresh doodh pahunchayega! 🥛☀️",
-        icon: <MapPinOff className="w-16 h-16 text-blue-500" />
-      };
-    }
 
     return {
       title: "Coming Soon!",

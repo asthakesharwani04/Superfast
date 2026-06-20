@@ -1,4 +1,4 @@
-import axiosInstance from '@core/api/axios';
+﻿import axiosInstance from '@core/api/axios';
 
 const emptyResponse = (result = {}) =>
   Promise.resolve({
@@ -10,7 +10,7 @@ const emptyResponse = (result = {}) =>
   });
 
 const mapBusinessSettings = (raw = {}) => ({
-  appName: raw.companyName || 'Appzeto',
+  appName: raw.companyName || 'SUPERFAST',
   supportEmail: raw.email || '',
   supportPhone: raw.phone?.number || '',
   currencySymbol: 'Rs',
@@ -30,7 +30,7 @@ const mapBusinessSettings = (raw = {}) => ({
   youtube: '',
   playStoreLink: '',
   appStoreLink: '',
-  metaTitle: raw.companyName || 'Appzeto',
+  metaTitle: raw.companyName || 'SUPERFAST',
   metaDescription: '',
   metaKeywords: '',
   keywords: [],
@@ -38,8 +38,8 @@ const mapBusinessSettings = (raw = {}) => ({
 });
 
 const buildSettingsPayload = (data = {}) => ({
-  companyName: data.companyName || data.appName || 'Appzeto',
-  email: data.supportEmail || 'admin@appzeto.com',
+  companyName: data.companyName || data.appName || 'SUPERFAST',
+  email: data.supportEmail || 'admin@SUPERFAST.com',
   phoneCountryCode: '+91',
   phoneNumber: String(data.supportPhone || '').replace(/\D/g, '') || '9999999999',
   address: data.address || '',

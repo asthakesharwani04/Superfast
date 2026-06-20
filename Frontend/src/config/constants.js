@@ -1,5 +1,5 @@
-export const APP_CONFIG = {
-  NAME: 'AppZeto Master',
+﻿export const APP_CONFIG = {
+  NAME: 'SUPERFAST Master',
   VERSION: '1.0.0',
 };
 

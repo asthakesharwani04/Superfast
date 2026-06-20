@@ -1,4 +1,4 @@
-import { useState } from "react"
+﻿import { useState } from "react"
 import { Link } from "react-router-dom"
 import {
   Search,
@@ -406,10 +406,10 @@ export default function Help() {
                       We'll respond within 24 hours
                     </p>
                     <a
-                      href="mailto:support@appzeto.com"
+                      href="mailto:support@SUPERFAST.com"
                       className="text-sm text-primary hover:underline font-medium"
                     >
-                      support@appzeto.com
+                      support@SUPERFAST.com
                     </a>
                   </div>
                 </div>

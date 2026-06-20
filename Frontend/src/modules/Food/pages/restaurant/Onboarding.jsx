@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+﻿import { useEffect, useRef, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { Input } from "@food/components/ui/input"
 import { Button } from "@food/components/ui/button"
@@ -565,7 +565,7 @@ export default function RestaurantOnboarding() {
                 }))
 
                 if (!matchedZoneId) {
-                  toast.warning("Your current location is outside OyeChotuu service zones.")
+                  toast.warning("Your current location is outside Superfast service zones.")
                 } else {
                   toast.success("Location updated successfully!")
                 }
@@ -1907,7 +1907,7 @@ export default function RestaurantOnboarding() {
           }))
 
           if (!matchedZoneId) {
-            toast.warning("Selected address is outside OyeChotuu service zones.")
+            toast.warning("Selected address is outside Superfast service zones.")
           } else {
             toast.success("Zone auto-selected based on address!")
           }

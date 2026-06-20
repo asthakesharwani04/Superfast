@@ -1,4 +1,4 @@
-import { useSearchParams, Link, useNavigate, useLocation as useRouterLocation } from "react-router-dom";
+﻿import { useSearchParams, Link, useNavigate, useLocation as useRouterLocation } from "react-router-dom";
 import React, {
   Suspense,
   lazy,
@@ -121,7 +121,6 @@ const ExploreMoreSection = lazy(() => import("@food/components/user/home/Explore
 const MiniCart = lazy(() => import("@food/components/user/MiniCart"));
 const OrderTrackingCard = lazy(() => import("@food/components/user/OrderTrackingCard"));
 const QuickCommerceHomePage = lazy(() => import("../../../quickCommerce/user/pages/Home"));
-const DudhwalaHomeScreen = lazy(() => import("../../../Dudhwala/screens/HomeScreen"));
 
 // Animated placeholder for search - moved outside component to prevent recreation
 const placeholders = [
@@ -268,11 +267,8 @@ export default function Home() {
   useEffect(() => {
     const path = routerLocation.pathname;
     const isQuick = path.endsWith("/quick") || path.includes("/quick/");
-    const isMilk = path.endsWith("/dudhwala") || path.includes("/dudhwala/");
-
     let targetTab = "food";
     if (isQuick) targetTab = "quick";
-    else if (isMilk) targetTab = "milk";
 
     if (activeTab !== targetTab) setActiveTab(targetTab);
   }, [routerLocation.pathname, activeTab]);
@@ -281,7 +277,6 @@ export default function Home() {
   const handleTabChange = (tab) => {
     startTransition(() => setActiveTab(tab));
     if (tab === "quick") navigate("/quick", { replace: true });
-    else if (tab === "milk") navigate("/dudhwala", { replace: true });
     else navigate("/food/user", { replace: true });
   };
 
@@ -343,7 +338,7 @@ export default function Home() {
           >
             <ServiceUnavailable 
               type={!isModuleEnabled ? "module" : "zone"} 
-              moduleName={activeTab === 'food' ? 'Food Delivery' : activeTab === 'quick' ? 'ChotuuMart' : 'ChotuuDudhwala'}
+              moduleName={activeTab === 'food' ? 'Food Delivery' : 'SuperfastMart'}
               onRefresh={() => window.location.reload()}
             />
           </motion.div>
@@ -482,7 +477,7 @@ export default function Home() {
               />
             </Suspense>
           </motion.div>
-        ) : activeTab === "quick" ? (
+        ) : (
           <motion.div
             key="quick-content"
             initial={{ opacity: 0 }}
@@ -508,19 +503,6 @@ export default function Home() {
                 </QuickWishlistProvider>
               </QuickCartProvider>
             </QuickLocationProvider>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="milk-content"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.16, ease: "easeOut" }}
-            className="bg-white dark:bg-[#0a0a0a]"
-          >
-            <Suspense fallback={<div className="h-screen w-full bg-white dark:bg-[#0a0a0a]" />}>
-              <DudhwalaHomeScreen />
-            </Suspense>
           </motion.div>
         )}
       </AnimatePresence>

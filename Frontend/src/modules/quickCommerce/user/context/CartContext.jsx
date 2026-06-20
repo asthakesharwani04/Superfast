@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { customerApi } from "../services/customerApi";
 import { useAuth } from "@core/context/AuthContext";
@@ -165,7 +165,7 @@ const persistQuickCartSnapshot = (items) => {
           "cart",
           "recent_searches",
           "search_history",
-          "appzeto_recent_searches",
+          "superfast_recent_searches",
           "user_recent_searches_v1",
         ];
         legacyKeys.forEach(key => {

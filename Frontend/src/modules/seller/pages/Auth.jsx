@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+﻿import { useMemo, useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, ShieldCheck, Store, Phone, KeyRound, ArrowLeft, Loader2, ConciergeBell, Soup, Utensils, Home } from "lucide-react";
@@ -9,7 +9,7 @@ import { useCompanyName } from "@food/hooks/useCompanyName";
 import { setAuthData } from "@food/utils/auth";
 import { useAuth } from "@core/context/AuthContext";
 import { sellerApi } from "../services/sellerApi";
-import zozomenLogo from "@/assets/zozomenLogo.png"
+import SuperfastLogo from "@/assets/SuperfastLogo.png"
 import { loadBusinessSettings, getCachedSettings } from "@common/utils/businessSettings"
 
 const DEFAULT_COUNTRY_CODE = "+91";
@@ -239,7 +239,7 @@ export default function SellerAuth() {
               animate={{ scale: 1 }}
               className="w-24 h-24 md:w-28 md:h-28 bg-white rounded-full flex items-center justify-center mb-3 shadow-2xl overflow-hidden border-[2px] border-[#16a34a] ring-[4px] ring-white"
             >
-              <img src={logoUrl || zozomenLogo} alt="Logo" className="w-full h-full object-cover rounded-full" />
+              <img src={logoUrl || SuperfastLogo} alt="Logo" className="w-full h-full object-cover rounded-full" />
             </motion.div>
             
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-2 uppercase">

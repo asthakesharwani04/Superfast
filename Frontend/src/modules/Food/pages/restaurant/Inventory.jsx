@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react"
+﻿import { useState, useEffect, useRef, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Search,
@@ -1132,7 +1132,7 @@ export default function Inventory() {
     try {
       let imageUrl = ""
       if (addonImageFile) {
-        const uploadRes = await uploadAPI.uploadMedia(addonImageFile, { folder: "appzeto/restaurant/addons" })
+        const uploadRes = await uploadAPI.uploadMedia(addonImageFile, { folder: "superfast/restaurant/addons" })
         imageUrl = uploadRes?.data?.data?.url || uploadRes?.data?.url || ""
       }
       const payload = {
@@ -2670,7 +2670,7 @@ export default function Inventory() {
                         />
                       </div>
                       <p className="text-sm text-gray-500">
-                        Item won't be visible to customers on OyeChotuu app till you mark it back in stock
+                        Item won't be visible to customers on Superfast app till you mark it back in stock
                       </p>
                     </div>
                   </label>

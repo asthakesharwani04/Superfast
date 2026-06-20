@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
+﻿import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useLocation as useRouterLocation, useNavigate } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
 import Lottie from "lottie-react";
@@ -80,9 +80,8 @@ const ICON_COMPONENTS = {
 };
 
 const serviceTabs = [
-  { name: "Chotuu FoodWala" },
-  { name: "ChotuuMart" },
-  { name: "Chotuu Dudhwala" },
+  { name: "Superfast FoodWala" },
+  { name: "SuperfastMart" },
 ];
 
 const isMeaningfulLocationValue = (value) => {
@@ -277,7 +276,7 @@ const MainLocationHeader = ({
   const { isOpen: isProductDetailOpen } = useProductDetail();
   const { cartCount } = useCart();
   const { settings } = useSettings();
-  const appName = settings?.appName || "ChotuuMart";
+  const appName = settings?.appName || "SuperfastMart";
   const logoUrl = settings?.logoUrl || LogoImage;
   const navigate = useNavigate();
   const routerLocation = useRouterLocation();

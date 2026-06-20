@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react"
+﻿import React, { useEffect, useState, useRef } from "react"
 import { motion } from "framer-motion"
 import { Routes, Route, Navigate, Link, useLocation, useNavigate } from "react-router-dom"
 import { Phone, Lock, ArrowRight, ShieldCheck, Loader2, UserRound, ChevronDown, Zap, HeadphonesIcon, Utensils, Home, Coffee, ConciergeBell, Soup } from "lucide-react"
@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { authAPI, userAPI } from "@food/api"
 import { isModuleAuthenticated, setAuthData } from "@food/utils/auth"
 import { useAuth } from "@core/context/AuthContext"
-import zozomenLogo from "@/assets/zozomenLogo.png"
+import SuperfastLogo from "@/assets/SuperfastLogo.png"
 import { loadBusinessSettings, getCachedSettings } from "@common/utils/businessSettings"
 
 export default function UnifiedOTPFastLogin() {
@@ -368,7 +368,7 @@ export default function UnifiedOTPFastLogin() {
               animate={{ scale: 1 }}
               className="w-24 h-24 md:w-28 md:h-28 bg-white rounded-full flex items-center justify-center mb-3 shadow-2xl overflow-hidden border-[2px] border-[#CB202D] ring-[4px] ring-white"
             >
-              <img src={logoUrl || zozomenLogo} alt="Logo" className="w-full h-full object-cover rounded-full" />
+              <img src={logoUrl || SuperfastLogo} alt="Logo" className="w-full h-full object-cover rounded-full" />
             </motion.div>
             
             <motion.h1
@@ -376,7 +376,7 @@ export default function UnifiedOTPFastLogin() {
               animate={{ opacity: 1, y: 0 }}
               className="text-2xl md:text-3xl font-bold tracking-tight mb-2"
             >
-              OyeChotuu
+              Superfast
             </motion.h1>
             <div className="flex items-center gap-2 justify-center">
                <div className="h-[1px] w-6 md:w-8 bg-white/70" />

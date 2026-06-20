@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/core/context/AuthContext";
 import { useSettings } from "@/core/context/SettingsContext";
@@ -211,7 +211,7 @@ const SidebarContent = ({ items, title, onClose, openMenu, handleToggle, hovered
           </div>
           <div>
             <h1 className="text-base font-black tracking-tight text-white leading-none">
-              OyeChotuu Vendor
+              Superfast Vendor
             </h1>
             <span className="text-[9px] font-black text-primary uppercase tracking-[0.2em] mt-1 block">
               {title}

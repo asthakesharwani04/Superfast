@@ -12,7 +12,6 @@ import SearchOverlay from "./SearchOverlay"
 import BottomNavigation from "./BottomNavigation"
 import DesktopNavbar from "./DesktopNavbar"
 import QuickBottomNav from "@/modules/quickCommerce/user/components/layout/BottomNav"
-import DudhwalaBottomNav from "@/modules/Dudhwala/components/BottomNavigation"
 import { useUserNotifications } from "../../hooks/useUserNotifications"
 import { useServiceability } from "@/modules/common/hooks/useServiceability"
 import { useZone } from "@food/hooks/useZone"
@@ -126,8 +125,6 @@ export default function UserLayout({ children }) {
   let activeTab = 'food';
   if (location.pathname === '/quick' || location.pathname.startsWith('/quick/')) {
     activeTab = 'quick';
-  } else if (location.pathname === '/dudhwala' || location.pathname.startsWith('/dudhwala/')) {
-    activeTab = 'milk';
   }
 
   const { isModuleEnabled } = useServiceability(activeTab);
@@ -147,14 +144,10 @@ export default function UserLayout({ children }) {
     normalizedPath === "/profile" &&
     profileSource === "quick"
 
-  const isSharedDudhwalaProfile =
-    normalizedPath === "/profile" &&
-    profileSource === "dudhwala"
 
   const isSharedFoodProfile =
     normalizedPath === "/profile" &&
-    profileSource !== "quick" &&
-    profileSource !== "dudhwala"
+    profileSource !== "quick"
 
   const isProfileRoot =
     normalizedPath === "/user/profile" ||
@@ -174,7 +167,7 @@ export default function UserLayout({ children }) {
     normalizedPath === "" // Handle empty string case for root relative to /food
 
   const isUnder250 = normalizedPath === "/under-250" || normalizedPath === "/user/under-250"
-  const showFoodBottomNav = showBottomNav && !isSharedQuickProfile && !isSharedDudhwalaProfile
+  const showFoodBottomNav = showBottomNav && !isSharedQuickProfile
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] dark:bg-[#0a0a0a] transition-colors duration-200">
@@ -194,7 +187,6 @@ export default function UserLayout({ children }) {
                   </main>
                   {!hideExtras && showFoodBottomNav && <BottomNavigation />}
                   {!hideExtras && isSharedQuickProfile && <QuickBottomNav />}
-                  {!hideExtras && isSharedDudhwalaProfile && <DudhwalaBottomNav />}
                 </LocationSelectorProvider>
               </SearchOverlayProvider>
           </OrdersProvider>

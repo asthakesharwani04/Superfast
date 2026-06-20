@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from "react-router-dom"
+﻿import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useEffect, useState, useRef } from "react"
 import { ChevronDown, ShoppingCart, Wallet, Search, Mic } from "lucide-react"
 import { Button } from "@food/components/ui/button"
@@ -60,7 +60,6 @@ export default function DesktopNavbar({ showLogo = true, hideExtras = false }) {
     const profileSource = new URLSearchParams(location.search).get("from")
     const isQuick = normalizedPath === "/quick" || normalizedPath.startsWith("/quick/")
     const isBakery = location.pathname.startsWith("/food/user/bakery") || location.pathname.startsWith("/food/bakery")
-    const isDudhwala = location.pathname.startsWith("/dudhwala")
     const isUnder250 = location.pathname === "/food/user/under-250" || location.pathname === "/food/under-250"
     const isSharedFoodProfile =
         (normalizedPath === "/profile" || normalizedPath.startsWith("/profile/")) &&
@@ -69,7 +68,7 @@ export default function DesktopNavbar({ showLogo = true, hideExtras = false }) {
         location.pathname.startsWith("/food/user/profile") ||
         location.pathname.startsWith("/food/profile") ||
         isSharedFoodProfile
-    const isDelivery = !isBakery && !isDudhwala && !isUnder250 && !isProfile && !isQuick && (location.pathname === "/food/user" || location.pathname === "/food" || (location.pathname.startsWith("/food/user") && !location.pathname.includes("/bakery") && !location.pathname.includes("/under-250") && !location.pathname.includes("/profile")))
+    const isDelivery = !isBakery && !isUnder250 && !isProfile && !isQuick && (location.pathname === "/food/user" || location.pathname === "/food" || (location.pathname.startsWith("/food/user") && !location.pathname.includes("/bakery") && !location.pathname.includes("/under-250") && !location.pathname.includes("/profile")))
     const isBannerRoute =
         location.pathname === "/food/user" ||
         location.pathname === "/food" ||
@@ -187,7 +186,7 @@ export default function DesktopNavbar({ showLogo = true, hideExtras = false }) {
                                         />
                                     ) : (
                                         <span className="text-xl font-bold text-gray-900 dark:text-white">
-                                          {companyName || "Appzeto"}
+                                          {companyName || "SUPERFAST"}
                                         </span>
                                     )}
                                 </Link>
@@ -406,25 +405,6 @@ export default function DesktopNavbar({ showLogo = true, hideExtras = false }) {
                                 )}
                             </Link>
 
-                            {/* Dudhwala Tab */}
-                            <Link
-                                to="/dudhwala"
-                                className={`flex flex-col items-center gap-1 px-2 py-1 transition-colors relative group ${isDudhwala
-                                    ? "text-[#cc2532] dark:text-[#cc2532]"
-                                    : "text-gray-600 dark:text-gray-400 hover:text-[#cc2532] dark:hover:text-[#cc2532]"
-                                    }`}
-                            >
-                                <span className="text-sm font-bold tracking-wide uppercase">Dudhwala</span>
-                                {isDudhwala && (
-                                    <motion.div
-                                        layoutId="navIndicator"
-                                        className="absolute -bottom-3 left-0 right-0 h-0.5 bg-[#cc2532] dark:bg-[#cc2532]"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ duration: 0.3 }}
-                                    />
-                                )}
-                            </Link>
 
                             {/* Profile Tab */}
                             <Link

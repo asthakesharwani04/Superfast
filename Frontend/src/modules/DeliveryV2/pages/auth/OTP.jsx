@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+﻿import { useState, useEffect, useRef } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { ArrowLeft, ShieldCheck, Timer, RefreshCw, Phone, ArrowRight, Loader2, ConciergeBell, Soup, Utensils, Home } from "lucide-react"
 import { Input } from "@food/components/ui/input"
@@ -6,7 +6,7 @@ import { Button } from "@food/components/ui/button"
 import { deliveryAPI } from "@food/api"
 import { setAuthData as storeAuthData } from "@food/utils/auth"
 import { motion } from "framer-motion"
-import zozomenLogo from "@/assets/zozomenLogo.png"
+import SuperfastLogo from "@/assets/SuperfastLogo.png"
 import { loadBusinessSettings, getCachedSettings } from "@common/utils/businessSettings"
 import { useCompanyName } from "@food/hooks/useCompanyName"
 import { useDeliveryStore } from '@/modules/DeliveryV2/store/useDeliveryStore'
@@ -591,7 +591,7 @@ export default function DeliveryOTP() {
               animate={{ scale: 1 }}
               className="w-24 h-24 md:w-28 md:h-28 bg-white rounded-full flex items-center justify-center mb-3 shadow-2xl overflow-hidden border-[2px] border-[#005b96] ring-[4px] ring-white"
             >
-              <img src={logoUrl || zozomenLogo} alt="Logo" className="w-full h-full object-cover rounded-full" />
+              <img src={logoUrl || SuperfastLogo} alt="Logo" className="w-full h-full object-cover rounded-full" />
             </motion.div>
             
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-2 uppercase">

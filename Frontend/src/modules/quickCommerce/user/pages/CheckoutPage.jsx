@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+﻿import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link, useLocation as useRouterLocation, useNavigate } from "react-router-dom";
 import Lottie from "lottie-react";
 import { useCart } from "../context/CartContext";
@@ -64,7 +64,7 @@ import {
 } from "../utils/routes";
 
 const CHECKOUT_STORAGE_KEY = "quick_commerce_checkout_state_v1";
-const RECIPIENT_STORAGE_KEY = "appzeto_checkout_recipient_v1";
+const RECIPIENT_STORAGE_KEY = "superfast_checkout_recipient_v1";
 
 const DEFAULT_CURRENT_ADDRESS = {
   type: "Home",

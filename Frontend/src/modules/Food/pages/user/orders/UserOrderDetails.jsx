@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+﻿import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import useAppBackNavigation from "@food/hooks/useAppBackNavigation"
 import {
@@ -293,7 +293,7 @@ export default function UserOrderDetails() {
       // Title
       doc.setFontSize(16)
       doc.setFont('helvetica', 'bold')
-      doc.text('OyeChotuu Order: Summary and Receipt', 105, 20, { align: 'center' })
+      doc.text('Superfast Order: Summary and Receipt', 105, 20, { align: 'center' })
       
       // Store/Restaurant Name (Subtitle)
       doc.setFontSize(12)

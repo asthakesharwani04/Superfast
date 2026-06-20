@@ -77,7 +77,6 @@ const ModuleManagement = () => {
     food: true,
     homeBakery: false,
     quickCommerce: true,
-    dudhwala: true,
   });
   const [codEnabled, setCodEnabled] = useState(true);
   const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);
@@ -95,7 +94,6 @@ const ModuleManagement = () => {
             food: settings.modules.food ?? true,
             homeBakery: settings.modules.homeBakery ?? false,
             quickCommerce: settings.modules.quickCommerce ?? true,
-            dudhwala: settings.modules.dudhwala ?? true,
           });
         }
         setCodEnabled(settings.codEnabled ?? true);
@@ -198,14 +196,6 @@ const ModuleManagement = () => {
                 color="pink"
               />
 
-              <ModuleCard 
-                title="Milk Delivery (Dudhwala)" 
-                description="Manage daily milk subscriptions and deliveries." 
-                icon={Zap} 
-                enabled={modules.dudhwala} 
-                onToggle={() => handleToggle('dudhwala')}
-                color="orange"
-              />
 
               <ModuleCard 
                 title="Cash on Delivery (COD)" 

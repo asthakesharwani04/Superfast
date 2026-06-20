@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import io from 'socket.io-client';
 import { API_BASE_URL } from '@food/api/config';
 import { restaurantAPI } from '@food/api';
@@ -400,10 +400,10 @@ export const useRestaurantNotifications = () => {
       let suggestedBackendUrl = null;
       
       // Common patterns:
-      // - If frontend is on foods.appzeto.com, backend might be api.foods.appzeto.com or foods.appzeto.com
-      if (frontendHost.includes('foods.appzeto.com')) {
-        suggestedBackendUrl = `${frontendProtocol}//api.foods.appzeto.com/api`;
-      } else if (frontendHost.includes('appzeto.com')) {
+      // - If frontend is on foods.SUPERFAST.com, backend might be api.foods.SUPERFAST.com or foods.SUPERFAST.com
+      if (frontendHost.includes('foods.SUPERFAST.com')) {
+        suggestedBackendUrl = `${frontendProtocol}//api.foods.SUPERFAST.com/api`;
+      } else if (frontendHost.includes('SUPERFAST.com')) {
         suggestedBackendUrl = `${frontendProtocol}//api.${frontendHost}/api`;
       }
       

@@ -3,7 +3,7 @@ import { loadBusinessSettings } from '@common/utils/businessSettings';
 
 /**
  * Hook to check if a specific module is enabled globally in the admin settings.
- * @param {string} activeTab - The active tab identifier ('food', 'quick', 'milk')
+ * @param {string} activeTab - The active tab identifier ('food', 'quick')
  * @returns {{ isModuleEnabled: boolean, loading: boolean }}
  */
 export function useServiceability(activeTab) {
@@ -18,8 +18,7 @@ export function useServiceability(activeTab) {
         // Map activeTab to module key in global business settings
         const moduleMap = {
           food: 'food',
-          quick: 'quickCommerce',
-          milk: 'dudhwala'
+          quick: 'quickCommerce'
         };
         const moduleKey = moduleMap[activeTab];
         
