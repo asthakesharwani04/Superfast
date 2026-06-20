@@ -1,4 +1,4 @@
-﻿export const APP_CONFIG = {
+export const APP_CONFIG = {
   NAME: 'SUPERFAST Master',
   VERSION: '1.0.0',
 };

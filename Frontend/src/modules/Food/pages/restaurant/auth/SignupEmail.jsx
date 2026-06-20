@@ -1,4 +1,4 @@
-﻿import { useState, useRef } from "react"
+import { useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { setAuthData } from "@food/utils/auth"
 import { Mail, User, Lock, Eye, EyeOff, ArrowLeft, UtensilsCrossed } from "lucide-react"

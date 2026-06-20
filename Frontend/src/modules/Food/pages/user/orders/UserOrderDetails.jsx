@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import useAppBackNavigation from "@food/hooks/useAppBackNavigation"
 import {

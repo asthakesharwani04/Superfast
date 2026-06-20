@@ -1,4 +1,4 @@
-﻿import { Link, useLocation, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useEffect, useState, useRef } from "react"
 import { ChevronDown, ShoppingCart, Wallet, Search, Mic } from "lucide-react"
 import { Button } from "@food/components/ui/button"

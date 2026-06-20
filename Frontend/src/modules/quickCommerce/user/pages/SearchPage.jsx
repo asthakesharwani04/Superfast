@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation as useRouterLocation } from 'react-router-dom';
 import { Search, ArrowLeft, X, ChevronRight, History, Mic } from 'lucide-react';
 import { customerApi } from '../services/customerApi';

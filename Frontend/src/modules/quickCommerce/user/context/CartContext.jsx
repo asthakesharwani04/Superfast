@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { customerApi } from "../services/customerApi";
 import { useAuth } from "@core/context/AuthContext";

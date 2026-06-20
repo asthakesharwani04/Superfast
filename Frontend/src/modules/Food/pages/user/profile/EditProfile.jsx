@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { ArrowLeft, X, Pencil, Loader2, Camera, Upload } from "lucide-react"
 import { Button } from "@food/components/ui/button"

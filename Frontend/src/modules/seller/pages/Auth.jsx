@@ -1,4 +1,4 @@
-﻿import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, ShieldCheck, Store, Phone, KeyRound, ArrowLeft, Loader2, ConciergeBell, Soup, Utensils, Home } from "lucide-react";
@@ -9,7 +9,7 @@ import { useCompanyName } from "@food/hooks/useCompanyName";
 import { setAuthData } from "@food/utils/auth";
 import { useAuth } from "@core/context/AuthContext";
 import { sellerApi } from "../services/sellerApi";
-import SuperfastLogo from "@/assets/SuperfastLogo.png"
+import SuperfastLogo from "@/assets/Logo.png"
 import { loadBusinessSettings, getCachedSettings } from "@common/utils/businessSettings"
 
 const DEFAULT_COUNTRY_CODE = "+91";

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { Search, Receipt, Loader2, Package } from "lucide-react"
 import { adminAPI } from "@food/api"
 import { toast } from "sonner"

@@ -1,4 +1,4 @@
-﻿import { GlobalSettings } from '../models/settings.model.js';
+import { GlobalSettings } from '../models/settings.model.js';
 import { sendResponse } from '../../../utils/response.js';
 import { uploadImageBufferDetailed } from '../../../services/cloudinary.service.js';
 import { FoodUser } from '../../../core/users/user.model.js';

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { adminAPI } from "@food/api";
 import { Button } from "@food/components/ui/button";
 import { Input } from "@food/components/ui/input";

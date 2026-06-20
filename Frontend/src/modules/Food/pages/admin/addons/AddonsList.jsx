@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Eye, Loader2, Search, Trash2, Pencil } from "lucide-react"
 import { Switch } from "@food/components/ui/switch"
 import { adminAPI, uploadAPI } from "@food/api"

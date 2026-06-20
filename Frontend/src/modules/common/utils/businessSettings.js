@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Business Settings Utility
  * Handles loading and updating business settings (favicon, title, logo)
  */

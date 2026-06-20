@@ -1,4 +1,4 @@
-﻿import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { ArrowRight, Utensils, Truck, Store, Globe, Heart, Shield, Clock } from "lucide-react"
 import { motion } from "framer-motion"

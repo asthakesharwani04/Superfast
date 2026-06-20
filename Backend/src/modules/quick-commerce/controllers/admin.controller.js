@@ -1,4 +1,4 @@
-﻿import mongoose from 'mongoose';
+import mongoose from 'mongoose';
 import { FoodUser } from '../../../core/users/user.model.js';
 import { QuickCategory } from '../models/category.model.js';
 import { QuickProduct } from '../models/product.model.js';

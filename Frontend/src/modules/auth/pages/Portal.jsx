@@ -1,4 +1,4 @@
-﻿import React, { useMemo } from "react"
+import React, { useMemo } from "react"
 import { motion } from "framer-motion"
 import { useLocation, useNavigate } from "react-router-dom"
 import { UtensilsCrossed, ShoppingBasket, ShieldCheck, User } from "lucide-react"

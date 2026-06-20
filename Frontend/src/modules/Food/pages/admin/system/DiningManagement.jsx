@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Upload, Trash2, Image as ImageIcon, Loader2, AlertCircle, CheckCircle2, ArrowUp, ArrowDown, Layout, Tag, UtensilsCrossed, Edit, X } from "lucide-react"
 import api, { adminAPI, uploadAPI } from "@food/api"
 import { getModuleToken } from "@food/utils/auth"

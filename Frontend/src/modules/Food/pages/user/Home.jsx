@@ -1,4 +1,4 @@
-﻿import { useSearchParams, Link, useNavigate, useLocation as useRouterLocation } from "react-router-dom";
+import { useSearchParams, Link, useNavigate, useLocation as useRouterLocation } from "react-router-dom";
 import React, {
   Suspense,
   lazy,

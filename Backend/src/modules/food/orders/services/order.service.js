@@ -1,4 +1,4 @@
-﻿// Order Service - Backend Logic
+// Order Service - Backend Logic
 import mongoose from 'mongoose';
 import { FoodOrder, FoodSettings } from '../models/order.model.js';
 // import { paymentSnapshotFromOrder } from './foodOrderPayment.service.js';

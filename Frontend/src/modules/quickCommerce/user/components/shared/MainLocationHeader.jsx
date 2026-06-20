@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useLocation as useRouterLocation, useNavigate } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
 import Lottie from "lottie-react";

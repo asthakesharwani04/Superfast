@@ -1,4 +1,4 @@
-﻿import { FoodPageContent } from '../models/pageContent.model.js';
+import { FoodPageContent } from '../models/pageContent.model.js';
 import { ValidationError } from '../../../../core/auth/errors.js';
 
 const normalizeKey = (key) => String(key || '').trim().toLowerCase();

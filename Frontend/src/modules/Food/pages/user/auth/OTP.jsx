@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import AnimatedPage from "@food/components/user/AnimatedPage"

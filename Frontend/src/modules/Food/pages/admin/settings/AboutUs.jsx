@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import api, { adminAPI } from "@food/api"
 import { API_ENDPOINTS } from "@food/api/config"

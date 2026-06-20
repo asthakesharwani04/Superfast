@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link, useLocation as useRouterLocation, useNavigate } from "react-router-dom";
 import Lottie from "lottie-react";
 import { useCart } from "../context/CartContext";

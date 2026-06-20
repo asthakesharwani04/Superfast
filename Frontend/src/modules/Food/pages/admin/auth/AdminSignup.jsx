@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { loadBusinessSettings, getCachedSettings } from "@common/utils/businessSettings"
 import { Button } from "@food/components/ui/button"

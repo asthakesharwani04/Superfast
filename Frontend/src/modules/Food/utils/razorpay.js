@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Razorpay Payment Integration Utility
  * Handles Razorpay payment initialization and verification
  */

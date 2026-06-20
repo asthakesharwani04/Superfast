@@ -1,4 +1,4 @@
-﻿// Utility for managing restaurant data across pages
+// Utility for managing restaurant data across pages
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}

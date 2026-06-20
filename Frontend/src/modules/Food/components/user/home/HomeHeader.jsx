@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation as useRouterLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useScroll } from "framer-motion";
 import {

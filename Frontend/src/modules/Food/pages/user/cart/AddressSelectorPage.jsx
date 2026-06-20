@@ -1,4 +1,4 @@
-﻿import { useMemo, useState, useEffect, useRef, useCallback } from "react"
+import { useMemo, useState, useEffect, useRef, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import { ChevronLeft, ChevronRight, Plus, MapPin, MoreHorizontal, Navigation, Home, Building2, Briefcase, Phone, X, Crosshair, Search, Edit2, Trash2 } from "lucide-react"
 import { Button } from "@food/components/ui/button"

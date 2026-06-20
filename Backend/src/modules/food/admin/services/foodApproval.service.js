@@ -1,4 +1,4 @@
-﻿import mongoose from 'mongoose';
+import mongoose from 'mongoose';
 import { ValidationError } from '../../../../core/auth/errors.js';
 import { FoodItem } from '../models/food.model.js';
 import { FoodAddon } from '../../restaurant/models/foodAddon.model.js';

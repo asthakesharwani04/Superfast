@@ -1,4 +1,4 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const path = 'z:/projects/SUPERFAST-zomato/Frontend/src/modules/Food/pages/user/Home.jsx';
 let content = fs.readFileSync(path, 'utf8');
 const searchString = '{/* Border Glow Effect */}';

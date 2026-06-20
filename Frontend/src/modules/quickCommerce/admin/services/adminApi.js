@@ -1,4 +1,4 @@
-﻿import axiosInstance from '@core/api/axios';
+import axiosInstance from '@core/api/axios';
 
 const emptyResponse = (result = {}) =>
   Promise.resolve({
