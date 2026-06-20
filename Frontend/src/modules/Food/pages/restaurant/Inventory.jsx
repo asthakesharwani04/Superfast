@@ -1132,7 +1132,7 @@ export default function Inventory() {
     try {
       let imageUrl = ""
       if (addonImageFile) {
-        const uploadRes = await uploadAPI.uploadMedia(addonImageFile, { folder: "superfast/restaurant/addons" })
+        const uploadRes = await uploadAPI.uploadMedia(addonImageFile, { folder: "appzeto/restaurant/addons" })
         imageUrl = uploadRes?.data?.data?.url || uploadRes?.data?.url || ""
       }
       const payload = {
@@ -1978,7 +1978,7 @@ export default function Inventory() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={activeTab === "add-ons" ? "Search add-ons by name or status" : "Search categories or menu items"}
+                  placeholder={activeTab === "add-ons" ? "Search add-ons by name or status" : "Search"}
                   className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-300 focus:bg-white focus:outline-none"
                 />
                 {searchQuery ? (
@@ -2670,7 +2670,7 @@ export default function Inventory() {
                         />
                       </div>
                       <p className="text-sm text-gray-500">
-                        Item won't be visible to customers on Zomato app till you mark it back in stock
+                        Item won't be visible to customers on OyeChotuu app till you mark it back in stock
                       </p>
                     </div>
                   </label>

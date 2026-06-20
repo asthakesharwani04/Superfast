@@ -293,7 +293,7 @@ export default function AdminNavbar({ onMenuClick }) {
                   />
                 ) : (
                   <span className="text-sm font-semibold text-neutral-700 px-2 truncate">
-                    {businessSettings?.companyName || "SuperFast"}
+                    {businessSettings?.companyName || "Appzeto"}
                   </span>
                 )}
               </div>

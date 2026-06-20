@@ -38,7 +38,7 @@ const adminSchema = new mongoose.Schema(
         },
         servicesAccess: {
             type: [String],
-            enum: ['food', 'quickCommerce'],
+            enum: ['food', 'quickCommerce', 'dudhwala'],
             default: ['food']
         }
     },

@@ -626,6 +626,11 @@ export default function ItemDetailsPage() {
       return
     }
 
+    if (images.length === 0) {
+      toast.error("Please add an item image")
+      return
+    }
+
     try {
       setUploadingImages(true)
 
@@ -656,7 +661,7 @@ export default function ItemDetailsPage() {
             let uploadResponse
             try {
               uploadResponse = await uploadAPI.uploadMedia(file, {
-                folder: 'superfast/restaurant/menu-items'
+                folder: 'appzeto/restaurant/menu-items'
               })
             } catch (folderUploadError) {
               // Fallback: retry without folder in case provider/account rejects custom folder.

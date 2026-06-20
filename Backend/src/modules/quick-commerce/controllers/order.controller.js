@@ -14,9 +14,17 @@ import {
   calculateQuickPricing,
   getRiderEarning as getQuickRiderEarning,
 } from '../admin/services/billing.service.js';
+import { haversineKm } from '../../food/orders/services/order.helpers.js';
 import * as foodTransactionService from '../../food/orders/services/foodTransaction.service.js';
 import { emitQuickCommerceStatusUpdate } from '../services/quickStatusRealtime.service.js';
 import { notifyOwnerSafely } from '../../../core/notifications/firebase.service.js';
+import {
+  createRazorpayOrder,
+  getRazorpayKeyId,
+  isRazorpayConfigured,
+  verifyPaymentSignature,
+  fetchRazorpayPayment
+} from '../../food/orders/helpers/razorpay.helper.js';
 
 const approvedProductFilter = {
   $or: [
@@ -43,16 +51,9 @@ const resolveId = (req) => {
 const getOrderPayableAmount = (order) => {
   const pricing = order?.pricing || {};
   const pricingTotal = Number(pricing.total ?? order?.total ?? 0);
-  const platformFee = Number(pricing.platformFee ?? 0);
 
-  // In quick-commerce, `pricing.total` is subtotal + fees (delivery/handling/gst...) minus discounts.
-  // Platform fee is stored separately and is part of what the customer pays.
-  const computed =
-    Number.isFinite(platformFee) && platformFee > 0
-      ? pricingTotal + platformFee
-      : pricingTotal;
-
-  return Number.isFinite(computed) ? Math.max(0, computed) : 0;
+  // In quick-commerce, `pricing.total` already includes all fees including platform fee.
+  return Number.isFinite(pricingTotal) ? Math.max(0, pricingTotal) : 0;
 };
 
 const normalizeOrderSummary = (order) => {
@@ -126,10 +127,15 @@ const normalizeRequestedItems = (items) => {
   if (!Array.isArray(items)) return [];
 
   return items
-    .map((item) => ({
-      productId: String(item?.productId || item?.itemId || item?.id || item?._id || '').trim(),
-      quantity: Math.max(1, Number(item?.quantity || 1)),
-    }))
+    .map((item) => {
+      const rawId = String(item?.productId || item?.itemId || item?.id || item?._id || '').trim();
+      const [parentId, variantSku] = rawId.split("::");
+      return {
+        productId: parentId,
+        variantSku: variantSku || item?.variantSku || null,
+        quantity: Math.max(1, Number(item?.quantity || 1)),
+      };
+    })
     .filter((item) => item.productId && mongoose.isValidObjectId(item.productId));
 };
 
@@ -226,14 +232,22 @@ export const placeOrder = async (req, res) => {
       .map((item) => {
         const product = productMap[String(item.productId)];
         if (!product) return null;
-        const unitPrice =
-          Number(product.salePrice || 0) > 0
-            ? Number(product.salePrice)
-            : Number(product.price || 0);
+        
+        const variant = item.variantSku && Array.isArray(product.variants)
+          ? product.variants.find((v) => v.sku === item.variantSku)
+          : null;
+          
+        const unitPrice = variant
+          ? (Number(variant.salePrice || 0) > 0 ? Number(variant.salePrice) : Number(variant.price || 0))
+          : (Number(product.salePrice || 0) > 0 ? Number(product.salePrice) : Number(product.price || 0));
+          
+        const name = variant ? `${product.name} (${variant.name})` : product.name;
+
         return {
           productId: product._id,
+          variantSku: item.variantSku || null,
           sellerId: product.sellerId || null,
-          name: product.name,
+          name: name,
           image: product.image || product.mainImage || '',
           price: unitPrice,
           quantity: item.quantity,
@@ -256,14 +270,22 @@ export const placeOrder = async (req, res) => {
         .map((item) => {
           const product = fallbackProductMap[String(item.productId)];
           if (!product) return null;
-          const unitPrice =
-            Number(product.salePrice || 0) > 0
-              ? Number(product.salePrice)
-              : Number(product.price || 0);
+          
+          const variant = item.variantSku && Array.isArray(product.variants)
+            ? product.variants.find((v) => v.sku === item.variantSku)
+            : null;
+            
+          const unitPrice = variant
+            ? (Number(variant.salePrice || 0) > 0 ? Number(variant.salePrice) : Number(variant.price || 0))
+            : (Number(product.salePrice || 0) > 0 ? Number(product.salePrice) : Number(product.price || 0));
+            
+          const name = variant ? `${product.name} (${variant.name})` : product.name;
+
           return {
             productId: product._id,
+            variantSku: item.variantSku || null,
             sellerId: product.sellerId || null,
-            name: product.name,
+            name: name,
             image: product.image || product.mainImage || '',
             price: unitPrice,
             quantity: item.quantity,
@@ -343,8 +365,20 @@ export const placeOrder = async (req, res) => {
       };
     });
 
-    // Calculate rider earning (using base payout if distance is unknown/short)
-    const riderEarning = await getQuickRiderEarning(0.1);
+    // Calculate actual distance between seller (first pickup) and customer
+    let actualDistanceKm = 0.1;
+    if (pickupPoints.length > 0 && customerCoords && customerCoords.length === 2) {
+      const sellerCoords = pickupPoints[0].location?.coordinates; // [lng, lat]
+      if (sellerCoords && sellerCoords.length === 2) {
+        actualDistanceKm = haversineKm(
+          sellerCoords[1], sellerCoords[0],
+          customerCoords[1], customerCoords[0]
+        );
+      }
+    }
+
+    // Calculate rider earning
+    const riderEarning = await getQuickRiderEarning(Math.max(0.1, actualDistanceKm));
 
     const order = await QuickOrder.create({
       orderType: 'quick',
@@ -372,7 +406,7 @@ export const placeOrder = async (req, res) => {
       payment: {
         method: paymentMode,
         status: paymentMode === 'razorpay' ? 'created' : 'cod_pending',
-        amountDue: Math.max(0, total + Number(pricing.platformFee || 0)),
+        amountDue: Math.max(0, total),
       },
       orderStatus: 'placed',
       riderEarning: riderEarning || 0,
@@ -437,8 +471,8 @@ export const placeOrder = async (req, res) => {
                 total: sellerSubtotal + allocatedDeliveryFee,
                 receivable: sellerReceivable,
               },
-              status: 'pending',
-              workflowStatus: 'SELLER_PENDING',
+              status: paymentMode === 'razorpay' ? 'created' : 'pending',
+              workflowStatus: paymentMode === 'razorpay' ? 'PENDING_PAYMENT' : 'SELLER_PENDING',
               sellerPendingExpiresAt: new Date(Date.now() + 2 * 60 * 1000),
               address: {
                 address: deliveryAddress?.street || '',
@@ -485,9 +519,41 @@ export const placeOrder = async (req, res) => {
 
     const sellerOrders = sellerOrdersResults;
 
+    let razorpayPayload = null;
+    if (paymentMode === "razorpay" && isRazorpayConfigured()) {
+      try {
+        const amountPaise = Math.round(getOrderPayableAmount(order) * 100);
+        const rzOrder = await createRazorpayOrder(amountPaise, "INR", order.orderId);
+        
+        await QuickOrder.updateOne(
+          { _id: order._id },
+          {
+            $set: {
+              "payment.razorpay": {
+                orderId: rzOrder.id,
+                status: "created"
+              }
+            }
+          }
+        );
+        order.payment.razorpay = { orderId: rzOrder.id, status: "created" };
+
+        razorpayPayload = {
+          key: getRazorpayKeyId(),
+          amount: amountPaise,
+          currency: "INR",
+          orderId: rzOrder.id,
+        };
+      } catch (err) {
+        logger.error(`Quick Razorpay order creation failed: ${err?.message || err}`);
+      }
+    }
+
     await QuickCart.findOneAndUpdate(idQuery, { $set: { items: [] } }, { upsert: false });
 
-    emitQuickOrderStatusUpdate(order, 'Quick order placed successfully.');
+    if (paymentMode !== 'razorpay') {
+      emitQuickOrderStatusUpdate(order, 'Quick order placed successfully.');
+    }
 
     if (shouldFanOutSellerOrders) {
       void (async () => {
@@ -503,7 +569,9 @@ export const placeOrder = async (req, res) => {
               ),
             ),
           );
-          emitQuickSellerOrders(upserts.filter(Boolean));
+          if (paymentMode !== 'razorpay') {
+            emitQuickSellerOrders(upserts.filter(Boolean));
+          }
         } catch (error) {
           logger.error(`Quick seller order fanout failed for ${order.orderId}: ${error?.message || error}`);
         }
@@ -528,6 +596,7 @@ export const placeOrder = async (req, res) => {
         pricing: order.pricing || {},
         createdAt: order.createdAt,
       },
+      razorpay: razorpayPayload
     });
   } catch (error) {
     logger.error(`Quick placeOrder failed: ${error?.message || error}`);
@@ -780,4 +849,101 @@ export const cancelOrder = async (req, res) => {
     });
   }
 };
+
+export const verifyPayment = async (req, res) => {
+  try {
+    const idQuery = resolveId(req);
+
+    if (!idQuery) {
+      return res.status(400).json({ success: false, message: 'sessionId or userId is required' });
+    }
+
+    const rawOrderId = String(req.params.orderId || '').trim();
+    if (!rawOrderId) {
+      return res.status(400).json({ success: false, message: 'orderId is required' });
+    }
+
+    const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
+    
+    if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+      return res.status(400).json({ success: false, message: 'Missing Razorpay credentials' });
+    }
+
+    const orderIdentityQuery = [{ orderId: rawOrderId }];
+    if (mongoose.isValidObjectId(rawOrderId)) {
+      orderIdentityQuery.unshift({ _id: rawOrderId });
+    }
+
+    const query = {
+      ...idQuery,
+      orderType: 'quick',
+      $or: orderIdentityQuery,
+    };
+
+    const order = await QuickOrder.findOne(query);
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    const isValid = verifyPaymentSignature(razorpayOrderId, razorpayPaymentId, razorpaySignature);
+    if (!isValid) {
+      return res.status(400).json({ success: false, message: 'Invalid payment signature' });
+    }
+
+    let isAuthorized = false;
+    try {
+        const paymentInfo = await fetchRazorpayPayment(razorpayPaymentId);
+        if (paymentInfo && (paymentInfo.status === 'captured' || paymentInfo.status === 'authorized')) {
+            isAuthorized = true;
+        }
+    } catch (e) {
+        logger.error(`Razorpay fetch failed: ${e.message}`);
+    }
+
+    if (!order.payment) order.payment = {};
+    if (!order.payment.razorpay) order.payment.razorpay = {};
+    
+    order.payment.status = isAuthorized ? 'completed' : 'failed';
+    order.payment.razorpay.paymentId = razorpayPaymentId;
+    order.payment.razorpay.signature = razorpaySignature;
+    order.payment.razorpay.status = isAuthorized ? 'captured' : 'failed';
+
+    await order.save();
+
+    if (isAuthorized) {
+        await SellerOrder.updateMany(
+            { orderId: order.orderId },
+            { 
+              $set: { 
+                'payment.status': 'completed',
+                'status': 'pending',
+                'workflowStatus': 'SELLER_PENDING'
+              } 
+            }
+        );
+        const updatedSellerOrders = await SellerOrder.find({ orderId: order.orderId }).lean();
+        emitQuickSellerOrders(updatedSellerOrders);
+        emitQuickOrderStatusUpdate(order, 'Quick order payment verified and placed successfully.');
+    }
+
+    return res.json({
+        success: true,
+        message: 'Payment verified successfully',
+        result: {
+            id: order._id,
+            status: order.orderStatus,
+            paymentStatus: order.payment.status,
+            paymentId: razorpayPaymentId
+        }
+    });
+  } catch (error) {
+    logger.error(`Quick verifyPayment failed: ${error?.message || error}`);
+    return res.status(500).json({
+      success: false,
+      error: error?.message || 'Failed to verify payment',
+    });
+  }
+};
+
 

@@ -13,6 +13,7 @@ import {
   MapPin,
   RotateCcw,
   FileText,
+  PackageOpen,
 } from "lucide-react"
 import { orderAPI, restaurantAPI } from "@food/api"
 import { useCart } from "@food/context/CartContext"
@@ -194,7 +195,7 @@ export default function UserOrderDetails() {
   const pricing = order.pricing || {}
   const sendsCutlery = order.sendCutlery !== false
 
-  const userName = order.userName || ""
+  const userName = order.userName || order.userId?.name || order.user?.name || order.customerName || ""
   const userPhone = order.userPhone || ""
   const paymentMethod = order.payment?.method || "Online"
   const paymentDate = order.createdAt
@@ -292,10 +293,15 @@ export default function UserOrderDetails() {
       // Title
       doc.setFontSize(16)
       doc.setFont('helvetica', 'bold')
-      doc.text(`${companyName} Order: Summary and Receipt`, 105, 20, { align: 'center' })
+      doc.text('OyeChotuu Order: Summary and Receipt', 105, 20, { align: 'center' })
+      
+      // Store/Restaurant Name (Subtitle)
+      doc.setFontSize(12)
+      doc.setFont('helvetica', 'italic')
+      doc.text(restaurantName || '', 105, 28, { align: 'center' })
 
       // Order details section
-      let yPos = 35
+      let yPos = 40
       doc.setFontSize(10)
       doc.setFont('helvetica', 'normal')
 
@@ -329,15 +335,8 @@ export default function UserOrderDetails() {
       doc.text(addressLines, 60, yPos)
       yPos += addressLines.length * 7
 
-      // Restaurant/Seller Name
-      const isQuick = order.orderType === "quick"
-      doc.setFont('helvetica', 'bold')
-      doc.text(isQuick ? 'Seller Name:' : 'Restaurant Name:', 20, yPos)
-      doc.setFont('helvetica', 'normal')
-      doc.text(restaurantName, 60, yPos)
-      yPos += 7
-
       // Restaurant/Seller Address
+      const isQuick = order.orderType === "quick"
       doc.setFont('helvetica', 'bold')
       doc.text(isQuick ? 'Seller Address:' : 'Restaurant Address:', 20, yPos)
       doc.setFont('helvetica', 'normal')
@@ -349,8 +348,8 @@ export default function UserOrderDetails() {
       const tableData = items.map(item => [
         item.variantName ? `${item.name || 'Item'} (${item.variantName})` : (item.name || 'Item'),
         String(item.quantity || item.qty || 1),
-        `?${Number(item.price || 0).toFixed(2)}`,
-        `?${Number((item.price || 0) * (item.quantity || item.qty || 1)).toFixed(2)}`
+        `Rs. ${Number(item.price || 0).toFixed(2)}`,
+        `Rs. ${Number((item.price || 0) * (item.quantity || item.qty || 1)).toFixed(2)}`
       ])
 
       autoTable(doc, {
@@ -374,8 +373,9 @@ export default function UserOrderDetails() {
       // Total
       doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
-      doc.text('Total:', 145, finalY + 10, { align: 'right' })
-      doc.text(`?${Number(pricing.total || 0).toFixed(2)}`, 195, finalY + 10, { align: 'right' })
+      doc.text('Total:', 135, finalY + 10, { align: 'right' })
+      const finalAmount = pricing.total || order.payment?.amountDue || order.payableAmount || order.totalAmount || 0
+      doc.text(`Rs. ${Number(finalAmount).toFixed(2)}`, 190, finalY + 10, { align: 'right' })
 
       // Save PDF instantly
       const fileName = `Order_Summary_${orderIdDisplay}_${Date.now()}.pdf`
@@ -431,30 +431,30 @@ export default function UserOrderDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 font-sans relative">
+    <div className="min-h-screen bg-gray-50 dark:bg-neutral-900 pb-24 font-sans relative">
       {/* Header */}
-      <div className="bg-white p-4 flex items-center sticky top-0 z-20 shadow-sm">
+      <div className="bg-white dark:bg-neutral-900 p-4 flex items-center sticky top-0 z-20 shadow-sm dark:border-b dark:border-neutral-800">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => navigate('/food/user')}
-            className="p-1 rounded-full hover:bg-gray-100"
+            className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800"
           >
-            <ArrowLeft className="w-6 h-6 text-gray-700 cursor-pointer" />
+            <ArrowLeft className="w-6 h-6 text-gray-700 dark:text-gray-300 cursor-pointer" />
           </button>
-          <h1 className="text-lg font-semibold text-gray-800">Order Details</h1>
+          <h1 className="text-lg font-semibold text-gray-800 dark:text-white">Order Details</h1>
         </div>
       </div>
 
       {/* Scrollable Content */}
       <div className="p-4 space-y-4">
         {/* Status Card */}
-        <div className="bg-white p-4 rounded-xl flex items-center gap-3 shadow-sm">
-          <div className="bg-gray-100 p-2 rounded-lg">
-            <ShoppingBag className="w-6 h-6 text-gray-600" />
+        <div className="bg-white dark:bg-neutral-800 p-4 rounded-xl flex items-center gap-3 shadow-sm">
+          <div className="bg-gray-100 dark:bg-neutral-700 p-2 rounded-lg">
+            <ShoppingBag className="w-6 h-6 text-gray-600 dark:text-gray-300" />
           </div>
           <div>
-            <h2 className="font-semibold text-gray-800">
+            <h2 className="font-semibold text-gray-800 dark:text-white">
               {order.status === "delivered"
                 ? "Order was delivered"
                 : order.status === "scheduled"
@@ -470,12 +470,12 @@ export default function UserOrderDetails() {
         </div>
 
         {/* Pickup Info Card */}
-        <div className="bg-white p-4 rounded-xl shadow-sm">
+        <div className="bg-white dark:bg-neutral-800 p-4 rounded-xl shadow-sm">
           <div className="mb-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-400">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-400 dark:text-gray-500">
               {order?.orderType === "mixed" ? "Pickup Details" : order?.orderType === "quick" ? "Seller Details" : "Restaurant Details"}
             </p>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               {order?.orderType === "mixed"
                 ? "Both your restaurant and store sources are listed below."
                 : order?.orderType === "quick" ? "Seller source for this order." : "Pickup source for this order."}
@@ -486,13 +486,13 @@ export default function UserOrderDetails() {
             {pickupSources.map((source, index) => {
               const isQuick = source.pickupType === "quick"
               const badgeClasses = isQuick
-                ? "bg-sky-50 text-sky-700 border-sky-200"
-                : "bg-red-50 text-red-700 border-red-200"
+                ? "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-900/30 dark:text-sky-300 dark:border-sky-800/50"
+                : "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800/50"
 
               return (
                 <div
                   key={source.id || `${source.pickupType}-${index}`}
-                  className="rounded-2xl border border-gray-100 bg-gray-50/80 p-4"
+                  className="rounded-2xl border border-gray-100 dark:border-neutral-700 bg-gray-50/80 dark:bg-neutral-900/50 p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 min-w-0">
@@ -511,8 +511,8 @@ export default function UserOrderDetails() {
                         <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${badgeClasses}`}>
                           {pickupSources.length > 1 ? `${source.label} ${index + 1}` : source.label}
                         </span>
-                        <h3 className="mt-2 font-semibold text-gray-800">{source.name}</h3>
-                        <p className="text-xs text-gray-500 mt-1">{source.address}</p>
+                        <h3 className="mt-2 font-semibold text-gray-800 dark:text-white">{source.name}</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{source.address}</p>
                       </div>
                     </div>
 
@@ -520,7 +520,7 @@ export default function UserOrderDetails() {
                       <button
                         type="button"
                         onClick={() => handleCallPickupSource(source.phone)}
-                        className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-[#cc2532] hover:bg-red-50 shrink-0"
+                        className="w-8 h-8 rounded-full border border-gray-200 dark:border-neutral-700 flex items-center justify-center text-[#cc2532] hover:bg-red-50 dark:hover:bg-neutral-800 shrink-0"
                       >
                         <Phone className="w-4 h-4" />
                       </button>
@@ -532,62 +532,88 @@ export default function UserOrderDetails() {
           </div>
 
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">
+            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">
               Order ID: #{orderIdDisplay}
             </span>
             <button type="button" onClick={handleCopyOrderId}>
-              <Copy className="w-3 h-3 text-gray-400 cursor-pointer" />
+              <Copy className="w-3 h-3 text-gray-400 dark:text-gray-500 cursor-pointer" />
             </button>
           </div>
 
           <div className="flex items-center gap-2 mb-4">
             <span
               className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${sendsCutlery
-                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                  : "bg-red-50 text-red-700 border border-red-200"
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800/50"
+                  : "bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800/50"
                 }`}
             >
               {sendsCutlery ? "Send cutlery" : "Don't send cutlery"}
             </span>
           </div>
 
-          <div className="border-t border-dashed border-gray-200 my-3" />
+          <div className="border-t border-dashed border-gray-200 dark:border-neutral-700 my-3" />
 
           {/* Items */}
           {items.map((item, idx) => (
-            <div key={idx} className="flex justify-between items-start mt-2">
-              <div className="flex items-center gap-2">
-                <div
-                  className={`w-3 h-3 border ${item.isVeg ? "border-green-600" : "border-red-600"
-                    } flex items-center justify-center p-[1px]`}
-                >
+            <div key={idx} className="flex flex-col mt-4 border-b border-gray-100 dark:border-neutral-700 pb-3 last:border-0">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-2">
                   <div
-                    className={`w-full h-full rounded-full ${item.isVeg ? "bg-green-600" : "bg-red-600"
-                      }`}
-                  />
+                    className={`w-3 h-3 border ${item.isVeg ? "border-green-600" : "border-red-600"
+                      } flex items-center justify-center p-[1px]`}
+                  >
+                    <div
+                      className={`w-full h-full rounded-full ${item.isVeg ? "bg-green-600" : "bg-red-600"
+                        }`}
+                    />
+                  </div>
+                  <span className="text-sm text-gray-700 dark:text-gray-200 font-medium">
+                    {item.quantity || item.qty || 1} x {item.name}{item.variantName ? ` (${item.variantName})` : ""}
+                  </span>
                 </div>
-                <span className="text-sm text-gray-700 font-medium">
-                  {item.quantity || item.qty || 1} x {item.name}{item.variantName ? ` (${item.variantName})` : ""}
+                <span className="text-sm text-gray-800 dark:text-white font-medium">
+                  ₹{(item.price || 0).toFixed(2)}
                 </span>
               </div>
-              <span className="text-sm text-gray-800 font-medium">
-                ₹{(item.price || 0).toFixed(2)}
-              </span>
+              
+              {/* Return Item Button for Delivered Quick Orders */}
+              {order?.orderType === "quick" && order?.status === "delivered" && (
+                <div className="mt-2 ml-5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const orderMongoId = order._id || orderId;
+                      const itemId = item.itemId || item.id || item.productId || item._id;
+                      if (!itemId) {
+                        toast.error("Product ID not available for return");
+                        return;
+                      }
+                      navigate(`/quick/orders/${encodeURIComponent(String(orderMongoId))}/return/${encodeURIComponent(String(itemId))}`, {
+                        state: { item, order }
+                      });
+                    }}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-full transition-colors"
+                  >
+                    <PackageOpen className="w-3.5 h-3.5" />
+                    Return Item
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
 
         {/* Bill Summary Card */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="p-4 flex justify-between items-center border-b border-gray-100">
+        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm overflow-hidden">
+          <div className="p-4 flex justify-between items-center border-b border-gray-100 dark:border-neutral-700">
             <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-gray-600" />
-              <h3 className="font-semibold text-gray-800">Bill Summary</h3>
+              <FileText className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+              <h3 className="font-semibold text-gray-800 dark:text-white">Bill Summary</h3>
             </div>
             <button
               type="button"
               onClick={handleDownloadSummary}
-              className="w-7 h-7 rounded-full bg-red-50 flex items-center justify-center text-[#cc2532] hover:bg-red-100"
+              className="w-7 h-7 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center text-[#cc2532] hover:bg-red-100 dark:hover:bg-red-900/50"
             >
               <Download className="w-4 h-4" />
             </button>
@@ -595,26 +621,26 @@ export default function UserOrderDetails() {
 
           <div className="p-4 space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-500">Item total</span>
+              <span className="text-gray-500 dark:text-gray-400">Item total</span>
               <div>
                 {pricing.originalItemTotal && (
                   <span className="text-gray-400 line-through mr-1">
                     ₹{Number(pricing.originalItemTotal).toFixed(2)}
                   </span>
                 )}
-                <span className="text-gray-800">
+                <span className="text-gray-800 dark:text-white">
                   ₹{Number(pricing.subtotal || pricing.total || 0).toFixed(2)}
                 </span>
               </div>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">GST (govt. taxes)</span>
-              <span className="text-gray-800">
-                ₹{Number(pricing.tax || 0).toFixed(2)}
+              <span className="text-gray-500 dark:text-gray-400">GST (govt. taxes)</span>
+              <span className="text-gray-800 dark:text-white">
+                ₹{Number(pricing.tax || pricing.gst || pricing.gstAmount || 0).toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-400 font-medium">Delivery fee</span>
+              <span className="text-gray-400 dark:text-gray-500 font-medium">Delivery fee</span>
               {pricing.deliveryFee === 0 && (
                 <span className="text-[#cc2532] text-[10px] font-bold border border-[#cc2532] px-1 rounded ml-1">
                   FREE
@@ -625,29 +651,37 @@ export default function UserOrderDetails() {
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Platform fee</span>
-              <span className="text-gray-800">
+              <span className="text-gray-500 dark:text-gray-400">Platform fee</span>
+              <span className="text-gray-800 dark:text-white">
                 ₹{Number(pricing.platformFee || 0).toFixed(2)}
               </span>
             </div>
+            {Number(pricing.handlingFee) > 0 && (
+              <div className="flex justify-between">
+                <span className="text-gray-500 dark:text-gray-400">Handling fee</span>
+                <span className="text-gray-800 dark:text-white">
+                  ₹{Number(pricing.handlingFee).toFixed(2)}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between">
-              <span className="text-gray-500">Subscription / other fees</span>
-              <span className="text-gray-800">
+              <span className="text-gray-500 dark:text-gray-400">Subscription / other fees</span>
+              <span className="text-gray-800 dark:text-white">
                 ₹{Number(pricing.subscriptionFee || 0).toFixed(2)}
               </span>
             </div>
 
-            <div className="border-t border-gray-100 my-2 pt-2 flex justify-between items-center">
-              <span className="font-bold text-gray-800">Paid</span>
-              <span className="font-bold text-gray-800">
-                ₹{Number(pricing.total || 0).toFixed(2)}
+            <div className="border-t border-gray-100 dark:border-neutral-700 my-2 pt-2 flex justify-between items-center">
+              <span className="font-bold text-gray-800 dark:text-white">Paid</span>
+              <span className="font-bold text-gray-800 dark:text-white">
+                ₹{Number(pricing.total || order.payment?.amountDue || order.payableAmount || order.totalAmount || 0).toFixed(2)}
               </span>
             </div>
           </div>
 
           {/* Savings Banner */}
           {savings > 0 && (
-            <div className="relative bg-red-50 p-3 pb-4 mt-2">
+            <div className="relative bg-red-50 dark:bg-red-900/20 p-3 pb-4 mt-2">
               <div className="absolute -top-1.5 left-0 w-full overflow-hidden leading-none">
                 <svg
                   className="relative block w-[calc(100%+1.3px)] h-[8px]"
@@ -658,7 +692,7 @@ export default function UserOrderDetails() {
                   <path
                     d="M0,0V46.29c47,0,47,69.5,94,69.5s47-69.5,94-69.5,47,69.5,94,69.5,47-69.5,94-69.5,47,69.5,94,69.5,47-69.5,94-69.5,47,69.5,94,69.5,47-69.5,94-69.5,47,69.5,94,69.5V0Z"
                     fill="#ffffff"
-                    className="fill-white"
+                    className="fill-white dark:fill-neutral-800"
                   />
                 </svg>
               </div>
@@ -674,30 +708,30 @@ export default function UserOrderDetails() {
         </div>
 
         {/* User & Delivery Details */}
-        <div className="bg-white p-4 rounded-xl shadow-sm space-y-5">
+        <div className="bg-white dark:bg-neutral-800 p-4 rounded-xl shadow-sm space-y-5">
           {/* User */}
           <div className="flex gap-3">
-            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-              <User className="w-5 h-5 text-gray-500" />
+            <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-neutral-700 flex items-center justify-center">
+              <User className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             </div>
             <div>
-              <h4 className="font-semibold text-gray-800 text-sm">
+              <h4 className="font-semibold text-gray-800 dark:text-white text-sm">
                 {userName || "Customer"}
               </h4>
-              <p className="text-gray-500 text-xs">{userPhone}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs">{userPhone}</p>
             </div>
           </div>
 
           {/* Payment */}
           <div className="flex gap-3">
             <div className="mt-0.5">
-              <CreditCard className="w-5 h-5 text-gray-500" />
+              <CreditCard className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             </div>
             <div>
-              <h4 className="font-semibold text-gray-800 text-sm">
+              <h4 className="font-semibold text-gray-800 dark:text-white text-sm">
                 Payment method
               </h4>
-              <p className="text-gray-500 text-xs mt-0.5">
+              <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
                 Paid via: {paymentMethod.toUpperCase()}
               </p>
             </div>
@@ -706,26 +740,26 @@ export default function UserOrderDetails() {
           {/* Date */}
           <div className="flex gap-3">
             <div className="mt-0.5">
-              <Calendar className="w-5 h-5 text-gray-500" />
+              <Calendar className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             </div>
             <div>
-              <h4 className="font-semibold text-gray-800 text-sm">
+              <h4 className="font-semibold text-gray-800 dark:text-white text-sm">
                 Payment date
               </h4>
-              <p className="text-gray-500 text-xs mt-0.5">{paymentDate}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">{paymentDate}</p>
             </div>
           </div>
 
           {/* Address */}
           <div className="flex gap-3">
             <div className="mt-0.5">
-              <MapPin className="w-5 h-5 text-gray-500" />
+              <MapPin className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             </div>
             <div>
-              <h4 className="font-semibold text-gray-800 text-sm">
+              <h4 className="font-semibold text-gray-800 dark:text-white text-sm">
                 Delivery address
               </h4>
-              <p className="text-gray-500 text-xs mt-0.5 leading-relaxed">
+              <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5 leading-relaxed">
                 {addressText || "Address not available"}
               </p>
             </div>
@@ -734,7 +768,7 @@ export default function UserOrderDetails() {
       </div>
 
       {/* Fixed Bottom Buttons */}
-      <div className="fixed bottom-0 w-full bg-white border-t border-gray-200 p-4 flex gap-3 z-20">
+      <div className="fixed bottom-0 w-full bg-white dark:bg-neutral-900 border-t border-gray-200 dark:border-neutral-800 p-4 flex gap-3 z-20">
         <button
           type="button"
           onClick={() => handleReorder(order)}
@@ -746,7 +780,7 @@ export default function UserOrderDetails() {
         <button
           type="button"
           onClick={handleDownloadSummary}
-          className="flex-1 bg-white border border-[#cc2532] text-[#cc2532] py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-red-50 transition-colors"
+          className="flex-1 bg-white dark:bg-neutral-900 border border-[#cc2532] text-[#cc2532] py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-red-50 dark:hover:bg-neutral-800 transition-colors"
         >
           <Download className="w-4 h-4" />
           Invoice
@@ -780,7 +814,7 @@ export default function UserOrderDetails() {
               debugLog("Navigating to complaint page with orderId:", orderIdString)
               navigate(`/user/complaints/submit/${encodeURIComponent(orderIdString)}`)
             }}
-            className="w-full bg-red-50 border border-red-200 text-red-700 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-red-100 transition-colors"
+            className="w-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-400 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
           >
             <FileText className="w-4 h-4" />
             {order?.orderType === "quick" ? "Seller Complaint" : "Restaurant Complaint"}

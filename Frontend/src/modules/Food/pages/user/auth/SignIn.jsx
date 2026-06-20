@@ -15,9 +15,11 @@ export default function SignIn() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
-  const [formData, setFormData] = useState({
-    phone: "",
-    countryCode: "+91", // required; default +91 for India
+  const [formData, setFormData] = useState(() => {
+    return {
+      phone: sessionStorage.getItem("userSignInPhone") || "",
+      countryCode: "+91", // required; default +91 for India
+    }
   })
 
   const [error, setError] = useState("")
@@ -56,6 +58,7 @@ export default function SignIn() {
     if (name === "phone") {
       value = value.replace(/\D/g, "").slice(0, 10)
       setError(validatePhone(value))
+      sessionStorage.setItem("userSignInPhone", value)
     }
 
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -228,7 +231,7 @@ export default function SignIn() {
             <p className="mb-2">By continuing, you agree to our</p>
             <div className="flex justify-center gap-2 flex-wrap">
               <Link to="/profile/terms" className="underline hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
-                Terms of Service
+                Terms & Conditions
               </Link>
               <span className="text-gray-300 dark:text-gray-700">•</span>
               <Link to="/profile/privacy" className="underline hover:text-gray-900 dark:hover:text-gray-100 transition-colors">

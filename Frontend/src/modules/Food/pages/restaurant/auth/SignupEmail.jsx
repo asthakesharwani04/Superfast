@@ -42,6 +42,11 @@ export default function RestaurantSignupEmail() {
       return
     }
 
+    if (!/^(?!.*\.comm+$)[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/i.test(formData.email.trim())) {
+      setError("Please enter a valid email address (e.g., name@gmail.com)")
+      return
+    }
+
     if (!formData.password) {
       setError("Password is required")
       return
@@ -206,7 +211,7 @@ export default function RestaurantSignupEmail() {
         <div className="absolute inset-0 flex items-center text-white pointer-events-none">
           <div className="bg-primary-orange/80 rounded-r-full py-10 xl:py-20 pl-10 xl:pl-14 pr-10 xl:pr-20 max-w-[70%] shadow-xl backdrop-blur-[1px]">
             <h1 className="text-3xl xl:text-4xl font-extrabold mb-4 tracking-wide leading-tight">
-              JOIN SUPERFAST
+              JOIN APPZETO
               <br />
               FOOD PLATFORM
             </h1>

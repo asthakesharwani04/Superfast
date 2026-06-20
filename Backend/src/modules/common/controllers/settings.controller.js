@@ -13,8 +13,8 @@ export async function getGlobalSettings(req, res, next) {
         if (!settings) {
             // Create default settings if none exist
             settings = await GlobalSettings.create({
-                companyName: 'SuperFast',
-                email: 'admin@superfast.com'
+                companyName: 'Appzeto',
+                email: 'admin@appzeto.com'
             });
         }
         return sendResponse(res, 200, 'Global settings fetched successfully', settings);
@@ -91,6 +91,7 @@ export async function updateGlobalSettings(req, res, next) {
                 food: modules.food !== undefined ? modules.food : settings.modules?.food,
                 homeBakery: modules.homeBakery !== undefined ? modules.homeBakery : settings.modules?.homeBakery,
                 quickCommerce: modules.quickCommerce !== undefined ? modules.quickCommerce : settings.modules?.quickCommerce,
+                dudhwala: modules.dudhwala !== undefined ? modules.dudhwala : settings.modules?.dudhwala,
             };
         }
         if (codEnabled !== undefined) {

@@ -18,6 +18,7 @@ const SellerLocations = React.lazy(() => import("../pages/SellerLocations"))
 const ActiveDeliveryBoys = React.lazy(() => import("../pages/ActiveDeliveryBoys"))
 const PendingDeliveryBoys = React.lazy(() => import("../pages/PendingDeliveryBoys"))
 const DeliveryFunds = React.lazy(() => import("../pages/DeliveryFunds"))
+const TransactionReport = React.lazy(() => import("../pages/TransactionReport"))
 const AdminWallet = React.lazy(() => import("../pages/AdminWallet"))
 const WithdrawalRequests = React.lazy(() => import("../pages/WithdrawalRequests"))
 const SellerTransactions = React.lazy(() => import("../pages/SellerTransactions"))
@@ -43,6 +44,9 @@ const QuickZoneSetup = React.lazy(() => import("../pages/ZoneSetup"))
 const QuickAddZone = React.lazy(() => import("../pages/AddZone"))
 const QuickViewZone = React.lazy(() => import("../pages/ViewZone"))
 const SellerCommission = React.lazy(() => import("../pages/SellerCommission"))
+const ReturnSettings = React.lazy(() => import("../pages/ReturnSettings"))
+const ReturnsList = React.lazy(() => import("../pages/ReturnsList"))
+const ReturnDetails = React.lazy(() => import("../pages/ReturnDetails"))
 
 
 
@@ -81,6 +85,7 @@ function QuickCommerceAdminRoutesInner() {
       <Route path="/tracking" element={<FleetTracking />} />
       <Route path="/delivery-funds" element={<DeliveryFunds />} />
       <Route path="/wallet" element={<AdminWallet />} />
+      <Route path="/transactions" element={<TransactionReport />} />
       <Route path="/withdrawals" element={<WithdrawalRequests />} />
       <Route path="/seller-transactions" element={<SellerTransactions />} />
       <Route path="/cash-collection" element={<CashCollection />} />
@@ -89,6 +94,9 @@ function QuickCommerceAdminRoutesInner() {
       <Route path="/faqs" element={<FAQManagement />} />
       <Route path="/orders/:status" element={<OrdersList />} />
       <Route path="/orders/view/:orderId" element={<OrderDetail />} />
+      <Route path="/returns/settings" element={<ReturnSettings />} />
+      <Route path="/returns" element={<ReturnsList />} />
+      <Route path="/returns/:id" element={<ReturnDetails />} />
       <Route path="/billing" element={<BillingCharges />} />
       <Route path="*" element={<Navigate to="/admin/quick-commerce" replace />} />
     </Routes>

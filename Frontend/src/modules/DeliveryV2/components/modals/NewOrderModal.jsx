@@ -26,11 +26,55 @@ export const NewOrderModal = ({ order, onAccept, onReject, onMinimize }) => {
     return () => clearInterval(timer);
   }, [timeLeft, onReject]);
 
+  const isReturnPickup = order?.type === 'RETURN_PICKUP';
+
   const { distanceKm, etaMins } = useMemo(() => {
     if (!order) return { distanceKm: null, etaMins: null };
 
-    // A. Use provided data if available (Direct distance from socket)
-    const rawDist = order.pickupDistanceKm || order.distanceKm;
+    if (order.type === 'RETURN_PICKUP') {
+      return {
+        distanceKm: Number(order.pickupDistance || 0).toFixed(1),
+        etaMins: 15
+      };
+    }
+
+    // Get pickup (restaurant/store) location
+    const rest = primaryPickup?.location || order.restaurantLocation || order.restaurantId?.location || {};
+    const resLat = parseFloat(order.restaurant_lat || order.restaurantLat || rest.latitude || rest.lat);
+    const resLng = parseFloat(order.restaurant_lng || order.restaurantLng || rest.longitude || rest.lng);
+
+    // Get customer (delivery) location
+    const deliveryAddress = order?.deliveryAddress || {};
+    const geoCoords =
+      Array.isArray(deliveryAddress?.location?.coordinates) &&
+      deliveryAddress.location.coordinates.length >= 2
+        ? {
+            lng: deliveryAddress.location.coordinates[0],
+            lat: deliveryAddress.location.coordinates[1],
+          }
+        : null;
+    const customerLoc = order.customerLocation || order.deliveryLocation || geoCoords || null;
+    const custLat = parseFloat(customerLoc?.lat);
+    const custLng = parseFloat(customerLoc?.lng);
+
+    // Calculate Restaurant to Customer distance
+    if (!isNaN(resLat) && !isNaN(resLng) && !isNaN(custLat) && !isNaN(custLng)) {
+      const distM = getHaversineDistance(
+        resLat, resLng,
+        custLat, custLng
+      );
+      const km = distM / 1000;
+      // Assume 25km/h avg for estimate (roughly 416m/min)
+      const mins = Math.ceil(distM / 416) + (order.prepTime || 5);
+      
+      return { 
+        distanceKm: km.toFixed(1), 
+        etaMins: mins 
+      };
+    }
+
+    // Fallback to order provided total distance if locations are missing
+    const rawDist = order.deliveryDistanceKm || order.distanceKm;
     const rawEta = order.estimatedTime || order.duration || order.eta;
     
     if (rawDist != null) {
@@ -40,32 +84,14 @@ export const NewOrderModal = ({ order, onAccept, onReject, onMinimize }) => {
       };
     }
 
-    // B. Calculate from locations (Local calculation fallback)
-    const rest = primaryPickup?.location || order.restaurantLocation || order.restaurantId?.location || {};
-    const resLat = parseFloat(order.restaurant_lat || order.restaurantLat || rest.latitude || rest.lat);
-    const resLng = parseFloat(order.restaurant_lng || order.restaurantLng || rest.longitude || rest.lng);
-
-    if (riderLocation && !isNaN(resLat) && !isNaN(resLng)) {
-      const distM = getHaversineDistance(
-        riderLocation.lat, riderLocation.lng,
-        resLat, resLng
-      );
-      const km = distM / 1000;
-      // Assume 25km/h avg for initial estimate (roughly 416m/min)
-      const mins = Math.ceil(distM / 416) + (order.prepTime || 5);
-      
-      return { 
-        distanceKm: km.toFixed(1), 
-        etaMins: mins 
-      };
-    }
-
     return { distanceKm: '??', etaMins: order.prepTime || 15 };
-  }, [order, primaryPickup, riderLocation]);
+  }, [order, primaryPickup]);
 
   if (!order) return null;
 
-  const earnings = order.earnings || order.riderEarning || (order.orderAmount ? order.orderAmount * 0.1 : 0);
+  const earnings = isReturnPickup
+    ? (order.expectedEarning || 0)
+    : (order.earnings || order.riderEarning || (order.orderAmount ? order.orderAmount * 0.1 : 0));
   const isQuickOrder = String(order?.orderType || order?.serviceType || order?.type || '').trim().toLowerCase() === 'quick';
   const restaurantName =
     order?.dispatchLeg?.sourceName ||
@@ -115,16 +141,25 @@ export const NewOrderModal = ({ order, onAccept, onReject, onMinimize }) => {
         )}`
       : null;
 
-  const pickupStops = pickupPoints.length
-    ? pickupPoints
-    : [
+  const pickupStops = isReturnPickup
+    ? [
         {
-          id: order?.dispatchLeg?.legId || 'food:primary',
-          pickupType: order?.dispatchLeg?.pickupType === 'quick' || isQuickOrder ? 'quick' : 'food',
-          sourceName: order?.dispatchLeg?.sourceName || restaurantName,
-          address: order?.dispatchLeg?.address || restaurantAddress,
-        },
-      ];
+          id: 'return:pickup',
+          pickupType: 'return',
+          sourceName: order.customerName || 'Customer',
+          address: order.customerAddress || 'Customer Address',
+        }
+      ]
+    : (pickupPoints.length
+      ? pickupPoints
+      : [
+          {
+            id: order?.dispatchLeg?.legId || 'food:primary',
+            pickupType: order?.dispatchLeg?.pickupType === 'quick' || isQuickOrder ? 'quick' : 'food',
+            sourceName: order?.dispatchLeg?.sourceName || restaurantName,
+            address: order?.dispatchLeg?.address || restaurantAddress,
+          },
+        ]);
 
   return (
     <motion.div
@@ -166,16 +201,17 @@ export const NewOrderModal = ({ order, onAccept, onReject, onMinimize }) => {
         <div className="p-5 pb-8 space-y-6">
           <div className="flex gap-4">
             <div className="flex flex-col items-center gap-1 mt-1.5 py-0.5">
-              <div className="w-4 h-4 rounded-full bg-green-500 border-[3px] border-green-50 shadow-lg shadow-green-500/20" />
+              <div className={`w-4 h-4 rounded-full ${isReturnPickup ? 'bg-blue-500 border-blue-50 shadow-blue-500/20' : 'bg-green-500 border-green-50 shadow-green-500/20'} border-[3px] shadow-lg`} />
               <div className={`w-0.5 ${pickupStops.length > 1 ? 'h-24' : 'h-14'} bg-dashed border-l-2 border-gray-100`} />
-              <div className="w-4 h-4 rounded-full bg-blue-500 border-[3px] border-blue-50 shadow-lg shadow-blue-500/20" />
+              <div className={`w-4 h-4 rounded-full ${isReturnPickup ? 'bg-green-500 border-green-50 shadow-green-500/20' : 'bg-blue-500 border-blue-50 shadow-blue-500/20'} border-[3px] shadow-lg`} />
             </div>
             <div className="flex-1 space-y-6">
               <div className="space-y-4">
                 {pickupStops.map((pickup, index) => {
+                  const isReturn = pickup.pickupType === 'return';
                   const isQuickStore = pickup.pickupType === 'quick';
-                  const pickupLabel = isQuickStore ? 'Store Pickup' : 'Restaurant Pickup';
-                  const pickupAccent = isQuickStore ? 'text-orange-600' : 'text-green-600';
+                  const pickupLabel = isReturn ? 'Customer Pickup' : (isQuickStore ? 'Store Pickup' : 'Restaurant Pickup');
+                  const pickupAccent = isReturn ? 'text-blue-600' : (isQuickStore ? 'text-orange-600' : 'text-green-600');
                   const pickupAddress = pickup.address || 'Address not available';
                   return (
                     <div key={pickup.id || `${pickup.pickupType}-${index}`}>
@@ -192,11 +228,13 @@ export const NewOrderModal = ({ order, onAccept, onReject, onMinimize }) => {
               <div>
                 <div className="flex items-center gap-2 mb-1.5 font-bold text-[9px] uppercase tracking-widest text-blue-600">
                   <MapPin className="w-3.5 h-3.5" />
-                  <span>Customer Drop</span>
+                  <span>{isReturnPickup ? 'Seller Drop' : 'Customer Drop'}</span>
                 </div>
-                <p className="text-gray-950 font-bold text-lg leading-tight">Customer Location</p>
-                <p className="text-gray-500 text-xs font-medium line-clamp-1">{customerAddress}</p>
-                {mapsLink && (
+                <p className="text-gray-950 font-bold text-lg leading-tight">
+                  {isReturnPickup ? (order.sellerName || 'Seller Store') : 'Customer Location'}
+                </p>
+                <p className="text-gray-500 text-xs font-medium line-clamp-1 font-medium leading-relaxed">{isReturnPickup ? (order.sellerAddress || 'Seller Address') : customerAddress}</p>
+                {!isReturnPickup && mapsLink && (
                   <a
                     href={mapsLink}
                     target="_blank"

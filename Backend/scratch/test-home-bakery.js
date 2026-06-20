@@ -25,7 +25,7 @@ async function runTest() {
     let settings = await GlobalSettings.findOne();
     if (!settings) {
       settings = new GlobalSettings({
-        companyName: 'Oye SuperFast Test',
+        companyName: 'Oye Chotuu Test',
         modules: { food: true, homeBakery: true, quickCommerce: true }
       });
     } else {

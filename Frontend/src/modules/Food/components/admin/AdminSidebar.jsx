@@ -11,6 +11,9 @@ import {
   commonAdminSidebarMenu,
 } from "@food/utils/commonAdminSidebarMenu"
 import {
+  dudhwalaAdminSidebarMenu,
+} from "@food/utils/dudhwalaAdminSidebarMenu"
+import {
   Search,
   FileText,
   Calendar,
@@ -158,6 +161,7 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
       food: true,
       quickCommerce: true,
       ...cached,
+      dudhwala: true // Force it to true for now
     };
   })
 
@@ -248,7 +252,7 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
           setCompanyName(cached.companyName)
         }
         if (cached.modules) {
-          setEnabledModules({ ...cached.modules })
+          setEnabledModules({ ...cached.modules, dudhwala: true })
         }
       }
     }
@@ -337,18 +341,21 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
 
 
   const isCommonAdmin = location.pathname.startsWith("/admin/global-settings")
+  const isDudhwalaAdmin = location.pathname.startsWith("/admin/dudhwala")
 
   const activeMenuData = useMemo(() => {
     let menu = adminSidebarMenu
     if (isQuickAdmin) menu = quickAdminSidebarMenu
     else if (isCommonAdmin) menu = commonAdminSidebarMenu
+    else if (isDudhwalaAdmin) menu = dudhwalaAdminSidebarMenu
 
     // Special case for the "Module Switcher" or shared links if they exist
     if (isQuickAdmin && !enabledModules.quickCommerce) return []
-    if (!isQuickAdmin && !isCommonAdmin && !enabledModules.food) return []
+    if (isDudhwalaAdmin && !enabledModules.dudhwala) return []
+    if (!isQuickAdmin && !isCommonAdmin && !isDudhwalaAdmin && !enabledModules.food) return []
 
     return menu
-  }, [isQuickAdmin, isCommonAdmin, enabledModules])
+  }, [isQuickAdmin, isCommonAdmin, isDudhwalaAdmin, enabledModules])
 
   // Ensure expandable keys exist for whichever admin module is active (food/quick)
   useEffect(() => {
@@ -370,6 +377,8 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
 
     } else if (target === "common") {
       navigate("/admin/global-settings")
+    } else if (target === "dudhwala") {
+      navigate("/admin/dudhwala")
     } else {
       navigate("/admin/food")
     }
@@ -756,7 +765,7 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
                     />
                   ) : (
                     <span className="text-xs font-semibold text-white px-2 truncate">
-                      {companyName || "SuperFast"}
+                      {companyName || "Appzeto"}
                     </span>
                   )}
                 </div>
@@ -819,12 +828,12 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
                       onClick={() => switchAdminModule("food")}
                       className={cn(
                         "rounded-lg px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-all",
-                        !isQuickAdmin && !isCommonAdmin
+                        !isQuickAdmin && !isCommonAdmin && !isDudhwalaAdmin
                           ? "bg-white text-neutral-900 shadow"
                           : "text-neutral-400 hover:text-white"
                       )}
                     >
-                      SuperFast Food
+                      ChotuuFood
                     </button>
                   )}
                   {enabledModules.quickCommerce && (!adminInfo?.servicesAccess || adminInfo.role === 'ADMIN' || adminInfo.servicesAccess.includes('quickCommerce')) && (
@@ -839,8 +848,24 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
                           : "text-neutral-400 hover:text-white"
                       )}
                     >
-                      SuperFast Mart
+                      ChotuuMart
                     </button>
+                  )}
+
+                  {(!adminInfo?.servicesAccess || adminInfo.role === 'ADMIN' || adminInfo.servicesAccess.includes('dudhwala')) && (
+                    <button
+                    key="dudhwala-module-btn"
+                    type="button"
+                    onClick={() => switchAdminModule("dudhwala")}
+                    className={cn(
+                      "rounded-lg px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-all",
+                      isDudhwalaAdmin
+                        ? "bg-blue-600 text-white shadow-[0_6px_20px_rgba(37,99,235,0.35)]"
+                        : "text-neutral-400 hover:text-white"
+                    )}
+                  >
+                    ChotuuDudhwala
+                  </button>
                   )}
 
                   {(!adminInfo || adminInfo.role === 'ADMIN') && (
@@ -852,7 +877,8 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
                       "rounded-lg px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-all",
                       isCommonAdmin
                         ? "bg-violet-600 text-white shadow-[0_6px_20px_rgba(124,58,237,0.35)]"
-                        : "text-neutral-400 hover:text-white"
+                        : "text-neutral-400 hover:text-white",
+                      !enabledModules.dudhwala && "col-span-2"
                     )}
                   >
                     Global Settings

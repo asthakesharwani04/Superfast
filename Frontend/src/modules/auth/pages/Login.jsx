@@ -11,7 +11,7 @@ import { loadBusinessSettings, getCachedSettings } from "@common/utils/businessS
 
 export default function UnifiedOTPFastLogin() {
   const RESEND_COOLDOWN_SECONDS = 60
-  const [phoneNumber, setPhoneNumber] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState(() => sessionStorage.getItem("userLoginPhone") || "")
   const [otp, setOtp] = useState("")
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -48,19 +48,10 @@ export default function UnifiedOTPFastLogin() {
     }
   }, [])
 
-  useEffect(() => {
-    if (keyboardInset > 0) {
-      const activeElement = document.activeElement
-      if (activeElement && (activeElement.tagName === "INPUT" || activeElement.tagName === "TEXTAREA")) {
-        setTimeout(() => {
-          activeElement.scrollIntoView({ behavior: "smooth", block: "center" })
-        }, 150)
-      }
-    }
-  }, [keyboardInset])
 
-  const fromPath = location.state?.from?.pathname || location.state?.from || "/portal"
-  const fromSearch = location.state?.from?.search || ""
+
+  const fromPath = typeof location.state?.from === "string" ? location.state.from : (location.state?.from?.pathname || "/portal")
+  const fromSearch = typeof location.state?.from === "object" ? (location.state?.from?.search || "") : ""
   const redirectTo = fromPath + fromSearch
 
   useEffect(() => {
@@ -317,7 +308,7 @@ export default function UnifiedOTPFastLogin() {
 
   return (
     <div
-      className={`h-[100dvh] bg-[#fafafa] flex flex-col relative font-sans ${keyboardInset > 0 ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden"}`}
+      className="h-[100dvh] bg-[#fafafa] flex flex-col relative font-sans overflow-hidden"
       style={{ paddingBottom: keyboardInset ? `${keyboardInset + 24}px` : undefined }}
     >
       {/* Top Red Section */}
@@ -385,7 +376,7 @@ export default function UnifiedOTPFastLogin() {
               animate={{ opacity: 1, y: 0 }}
               className="text-2xl md:text-3xl font-bold tracking-tight mb-2"
             >
-              SuperFast
+              OyeChotuu
             </motion.h1>
             <div className="flex items-center gap-2 justify-center">
                <div className="h-[1px] w-6 md:w-8 bg-white/70" />
@@ -407,7 +398,7 @@ export default function UnifiedOTPFastLogin() {
       </div>
 
 
-      <div className="flex-1 max-w-[420px] mx-auto w-full px-4 flex flex-col mt-16 md:mt-20 relative z-20 pb-4 h-full">
+      <div className="flex-1 max-w-[420px] mx-auto w-full px-4 flex flex-col mt-16 md:mt-20 relative z-20 pb-4 h-full overflow-y-auto">
         {/* Main Card */}
         <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-gray-100 shrink-0 mb-4">
           <div className="text-center mb-5">
@@ -443,7 +434,11 @@ export default function UnifiedOTPFastLogin() {
                     required
                     autoFocus
                     value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      setPhoneNumber(val);
+                      sessionStorage.setItem("userLoginPhone", val);
+                    }}
                     maxLength={10}
                     className="w-full bg-transparent pl-2 pr-2 py-1.5 text-sm text-gray-900 font-semibold outline-none placeholder:text-gray-400 placeholder:font-normal"
                     placeholder="Enter phone number"
@@ -603,7 +598,7 @@ export default function UnifiedOTPFastLogin() {
         <div className="text-center space-y-1 shrink-0 mt-auto pt-4 mb-2">
           <p className="text-[10px] text-gray-500 font-medium">By continuing, you agree to our</p>
           <div className="flex items-center justify-center gap-1.5 text-[10px] font-semibold">
-            <Link to="/food/user/profile/terms" className="text-[#CB202D] hover:underline">Terms of Service</Link>
+            <Link to="/food/user/profile/terms" className="text-[#CB202D] hover:underline">Terms & Conditions</Link>
             <span className="text-gray-400">•</span>
             <Link to="/food/user/profile/privacy" className="text-[#CB202D] hover:underline">Privacy Policy</Link>
             <span className="text-gray-400">•</span>

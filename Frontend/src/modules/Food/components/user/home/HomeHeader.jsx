@@ -17,6 +17,7 @@ import {
   ChefHat,
   Soup,
   Coffee,
+  Milk,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Switch } from "@food/components/ui/switch";
@@ -32,14 +33,19 @@ import useNotificationInbox from "@food/hooks/useNotificationInbox";
 const tabs = [
   {
     id: "food",
-    name: "SuperFast Food",
+    name: "ChotuuFood",
     icon: "https://cdn-icons-png.flaticon.com/512/3075/3075977.png",
   },
   {
     id: "quick",
-    name: "SuperFast Mart",
+    name: "ChotuuMart",
     icon: "https://cdn-icons-png.flaticon.com/512/3724/3724720.png",
     badge: "15 mins",
+  },
+  {
+    id: "milk",
+    name: "ChotuuDudhwala",
+    icon: "https://cdn-icons-png.flaticon.com/512/933/933854.png",
   },
 ];
 
@@ -82,6 +88,18 @@ const foodTheme = (vegMode) => {
   };
 };
 
+const milkTheme = () => {
+  const base = "#0ea5e9"; // Dairy themed light blue
+  return {
+    topBg: `linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 100%), ${base}`,
+    accent: base,
+    text: "#ffffff",
+    activeBg: base,
+    activeText: "#ffffff",
+    inactiveBg: "rgba(0,0,0,0.25)",
+    inactiveBorder: "rgba(255,255,255,0.08)",
+  };
+};
 
 const isMeaningfulLocationValue = (value) => {
   const normalized = String(value || "").trim().toLowerCase();
@@ -145,6 +163,7 @@ export default function HomeHeader({
   quickThemeColor,
   onQuickTabIntent,
   bannerComponent,
+  hideExtras = false,
 }) {
   const navigate = useNavigate();
   const [isListening, setIsListening] = useState(false);
@@ -182,6 +201,7 @@ export default function HomeHeader({
 
   const theme = useMemo(() => {
     if (activeTab === "quick") return quickTheme(quickThemeColor);
+    if (activeTab === "milk") return milkTheme();
     return foodTheme(vegMode);
   }, [activeTab, quickThemeColor, vegMode]);
   const isFood = activeTab === "food";
@@ -343,13 +363,15 @@ export default function HomeHeader({
         </button>
 
         <div className="flex items-center gap-2 shrink-0">
-          <Link
-            to={walletPath}
-            className="h-[38px] w-[38px] rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
-            aria-label="Open wallet"
-          >
-            <Wallet className="h-[19px] w-[19px] text-[#282c3f]" strokeWidth={2} />
-          </Link>
+          {!hideExtras && (
+            <>
+              <Link
+                to={walletPath}
+                className="h-[38px] w-[38px] rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
+                aria-label="Open wallet"
+              >
+                <Wallet className="h-[19px] w-[19px] text-[#282c3f]" strokeWidth={2} />
+              </Link>
 
           <Popover>
             <PopoverTrigger asChild>
@@ -425,6 +447,8 @@ export default function HomeHeader({
           >
             <ShoppingCart className="h-[20px] w-[20px] text-[#282c3f]" strokeWidth={2} />
           </Link>
+            </>
+          )}
         </div>
       </div>
 
@@ -492,11 +516,17 @@ export default function HomeHeader({
               </div>
 
               <div className={`absolute inset-x-0 bottom-0 z-10 flex flex-col items-center justify-center gap-[4px] px-1 ${isActive ? "top-0" : "top-[10px]"}`}>
-                <img
-                  src={tab.icon}
-                  alt={tab.name}
-                  className={`object-contain transition-transform duration-300 ${isActive ? "h-[28px] w-[28px] scale-110" : "h-[24px] w-[24px] brightness-0 invert opacity-80"}`}
-                />
+                {tab.id === 'milk' ? (
+                  <Milk
+                    className={`transition-transform duration-300 ${isActive ? "h-[28px] w-[28px] scale-110 text-white" : "h-[24px] w-[24px] brightness-0 invert opacity-80"}`}
+                  />
+                ) : (
+                  <img
+                    src={tab.icon}
+                    alt={tab.name}
+                    className={`object-contain transition-transform duration-300 ${isActive ? "h-[28px] w-[28px] scale-110" : "h-[24px] w-[24px] brightness-0 invert opacity-80"}`}
+                  />
+                )}
                 <span
                   style={{ color: "#ffffff" }}
                   className={`text-[10px] font-black tracking-tight ${isActive ? "opacity-100" : "opacity-80"}`}
@@ -511,7 +541,7 @@ export default function HomeHeader({
 
       <div className={cn("relative z-10 pb-0 px-3 overflow-visible", isFood ? "pt-3" : "pt-0")}>
         {isFood && isSticky && <div className="h-[46px] mb-2" />}
-        {isFood && (
+        {isFood && !hideExtras && (
           <div 
             className={cn("flex items-center gap-2 mb-2", 
               isSticky ? "fixed top-0 left-0 right-0 z-[100] px-4 py-2 pb-3 shadow-md backdrop-blur-xl border-b border-black/5 dark:border-white/5" : "relative w-full px-0"

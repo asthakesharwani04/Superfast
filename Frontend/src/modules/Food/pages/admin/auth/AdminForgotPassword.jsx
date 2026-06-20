@@ -241,7 +241,7 @@ export default function AdminForgotPassword() {
                   />
                 ) : (
                   <span className="text-xs font-bold text-gray-900 truncate px-2">
-                    {displayCompanyName || "SuperFast"}
+                    {displayCompanyName || "Appzeto"}
                   </span>
                 )}
               </div>

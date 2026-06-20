@@ -15,6 +15,8 @@ const ProductDetail = lazy(() => import("./user/pages/ProductDetailPage"))
 const Checkout = lazy(() => import("./user/pages/CheckoutPage"))
 const Wallet = lazy(() => import("../Food/pages/user/Wallet"))
 const Addresses = lazy(() => import("./user/pages/AddressesPage"))
+const StoresPage = lazy(() => import("./user/pages/StoresPage"))
+const StoreProductsPage = lazy(() => import("./user/pages/StoreProductsPage"))
 const Support = lazy(() => import("./user/pages/SupportPage"))
 const Search = lazy(() => import("./user/pages/SearchPage"))
 const Wishlist = lazy(() => import("./user/pages/WishlistPage"))
@@ -22,6 +24,9 @@ const Transactions = lazy(() => import("./user/pages/OrderTransactionsPage"))
 const Privacy = lazy(() => import("./user/pages/PrivacyPage"))
 const About = lazy(() => import("./user/pages/AboutPage"))
 const Terms = lazy(() => import("./user/pages/TermsPage"))
+const ReturnProduct = lazy(() => import("./user/pages/ReturnProductPage"))
+const ReturnsList = lazy(() => import("./user/pages/ReturnsListPage"))
+const ReturnDetails = lazy(() => import("./user/pages/ReturnDetailsPage"))
 
 import { CartProvider } from "./user/context/CartContext"
 import { LocationProvider } from "./user/context/LocationContext"
@@ -29,6 +34,7 @@ import { ProductDetailProvider } from "./user/context/ProductDetailContext"
 import { WishlistProvider } from "./user/context/WishlistContext"
 import { CartAnimationProvider } from "./user/context/CartAnimationContext"
 import { ProfileProvider } from "@food/context/ProfileContext"
+import { CartProvider as FoodCartProvider } from "@food/context/CartContext"
 
 // Inner routes component — kept separate so Suspense doesn't remount providers
 function QuickCommerceInnerRoutes() {
@@ -41,8 +47,13 @@ function QuickCommerceInnerRoutes() {
           <Route path="cart" element={<Cart />} />
           <Route path="orders" element={<Orders />} />
           <Route path="orders/:orderId" element={<OrderDetail />} />
+          <Route path="orders/:orderId/return/:productId" element={<ReturnProduct />} />
+          <Route path="returns" element={<ReturnsList />} />
+          <Route path="returns/:id" element={<ReturnDetails />} />
           <Route path="products" element={<Products />} />
           <Route path="categories" element={<Categories />} />
+          <Route path="stores" element={<StoresPage />} />
+          <Route path="stores/:storeId" element={<StoreProductsPage />} />
           <Route path="categories/:categoryId" element={<CategoryProducts />} />
           <Route path="product/:productId" element={<ProductDetail />} />
           <Route path="checkout" element={<Checkout />} />

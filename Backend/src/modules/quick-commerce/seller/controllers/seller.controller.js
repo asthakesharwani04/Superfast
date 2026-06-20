@@ -1985,8 +1985,12 @@ export const getSellerEarningsController = async (req, res) => {
       .filter((item) => item.type === "Order Payment")
       .reduce((sum, item) => sum + num(item.amount), 0);
 
+    const totalAdjustments = transactions
+      .filter((item) => item.type === "Adjustment" && item.status === "Settled")
+      .reduce((sum, item) => sum + num(item.amount), 0);
+
     const totalNetEarnings =
-      orderNetEarnings > 0 ? orderNetEarnings : txnNetEarnings;
+      (orderNetEarnings > 0 ? orderNetEarnings : txnNetEarnings) + totalAdjustments;
 
     const grossSales = orders.reduce(
       (sum, o) => sum + num(o.pricing?.total),
@@ -2202,8 +2206,9 @@ export const getSellerStatsController = async (req, res) => {
           )),
       0,
     );
-    const totalOrders = deliveredOrders.length;
-    const avgOrderValue = totalOrders ? totalSales / totalOrders : 0;
+    const totalOrders = orders.length;
+    const deliveredCount = deliveredOrders.length;
+    const avgOrderValue = deliveredCount ? totalSales / deliveredCount : 0;
 
     const chartBuckets = new Map();
     const now = new Date();

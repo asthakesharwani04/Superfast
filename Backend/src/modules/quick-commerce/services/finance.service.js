@@ -94,28 +94,22 @@ export async function getQuickCommerceFinanceSummary() {
       vars: {
         amountDue: { $ifNull: ["$payment.amountDue", 0] },
         payableAmount: { $ifNull: ["$payableAmount", 0] },
+        payableTotal: { $ifNull: ["$pricing.payableTotal", 0] },
         totalAmount: { $ifNull: ["$totalAmount", 0] },
         amount: { $ifNull: ["$amount", 0] },
         total: { $ifNull: ["$total", 0] },
         pricingTotal: { $ifNull: ["$pricing.total", 0] },
-        platformFee: { $ifNull: ["$pricing.platformFee", 0] },
       },
       in: {
         $max: [
           0,
           "$$amountDue",
           "$$payableAmount",
+          "$$payableTotal",
           "$$totalAmount",
           "$$amount",
           "$$total",
-          {
-            $add: [
-              "$$pricingTotal",
-              {
-                $cond: [{ $gt: ["$$platformFee", 0] }, "$$platformFee", 0],
-              },
-            ],
-          },
+          "$$pricingTotal",
         ],
       },
     },
@@ -141,7 +135,6 @@ export async function getQuickCommerceFinanceSummary() {
     walletFloatAgg,
     sellerReceivableAgg,
     sellerSettledWithdrawalAgg,
-    deliveryPendingAgg,
     adminProfitAgg,
   ] = await Promise.all([
     getBalance("admin", "platform"),
@@ -172,7 +165,7 @@ export async function getQuickCommerceFinanceSummary() {
       },
     ]),
     FoodDeliveryWallet.aggregate([
-      { $group: { _id: null, float: { $sum: { $ifNull: ["$cashInHand", 0] } } } },
+      { $group: { _id: null, float: { $sum: { $ifNull: ["$cashInHand", 0] } }, balance: { $sum: { $ifNull: ["$balance", 0] } }, lockedAmount: { $sum: { $ifNull: ["$lockedAmount", 0] } } } },
     ]),
     SellerOrder.aggregate([
       {
@@ -196,16 +189,14 @@ export async function getQuickCommerceFinanceSummary() {
         $group: { _id: null, total: { $sum: { $abs: { $ifNull: ["$amount", 0] } } } },
       },
     ]),
-    FoodDeliveryWithdrawal.aggregate([
-      { $match: { status: { $in: ["pending", "processing"] } } },
-      {
-        $group: { _id: null, total: { $sum: { $abs: { $ifNull: ["$amount", 0] } } } },
-      },
-    ]),
     QuickOrder.aggregate([
       { $match: { ...ACTIVE_ORDER_FILTER, ...DELIVERED_ORDER_FILTER } },
       {
-        $group: { _id: null, total: { $sum: adminEarningPerOrderExpr } },
+        $group: { 
+          _id: null, 
+          total: { $sum: adminEarningPerOrderExpr },
+          deliveryEarning: { $sum: deliveryEarningPerOrderExpr }
+        },
       },
     ]),
   ]);
@@ -213,19 +204,22 @@ export async function getQuickCommerceFinanceSummary() {
   const totalOnline = num(onlineAgg?.[0]?.total);
   const totalCodCollected = num(codAgg?.[0]?.total);
   const walletFloat = num(walletFloatAgg?.[0]?.float);
+  const deliveryPendingBalance = num(walletFloatAgg?.[0]?.balance) + num(walletFloatAgg?.[0]?.lockedAmount);
   const sellerReceivable = num(sellerReceivableAgg?.[0]?.total);
   const sellerSettledWithdrawals = num(sellerSettledWithdrawalAgg?.[0]?.total);
 
   return {
     totalPlatformEarning: totalOnline + totalCodCollected,
     totalAdminEarning: num(adminProfitAgg?.[0]?.total),
+    totalSellerEarning: sellerReceivable,
+    totalDeliveryEarning: num(adminProfitAgg?.[0]?.deliveryEarning),
     availableBalance: num(adminWallet?.availableBalance),
     // COD float should represent COD cash collected by riders.
     // Prefer tracked rider wallet cash, but never under-report compared to delivered COD collections.
     systemFloatCOD: Math.max(walletFloat, totalCodCollected),
     // Owed to sellers = delivered net receivable (subtotal - commission) minus settled withdrawals.
     sellerPendingPayouts: Math.max(0, sellerReceivable - sellerSettledWithdrawals),
-    deliveryPendingPayouts: num(deliveryPendingAgg?.[0]?.total),
+    deliveryPendingPayouts: deliveryPendingBalance,
   };
 }
 

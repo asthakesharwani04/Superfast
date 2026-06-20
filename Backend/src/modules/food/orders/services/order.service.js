@@ -37,6 +37,7 @@ import { addOrderJob } from '../../../../queues/producers/order.producer.js';
 import { fetchPolyline } from '../utils/googleMaps.js';
 import { getFirebaseDB } from '../../../../config/firebase.js';
 import * as foodTransactionService from './foodTransaction.service.js';
+import { isStatusAdvance } from './order.helpers.js';
 
 const ORDER_ID_PREFIX = "FOD-";
 const ORDER_ID_LENGTH = 6;
@@ -2283,7 +2284,7 @@ export async function createOrder(userId, dto) {
           : orderType === "quick"
           ? `Your quick order #${orderId} has been placed successfully.`
           : `Your order #${orderId} from ${primaryRestaurant?.sourceName || "the restaurant"} has been placed successfully.`,
-      image: "https://i.ibb.co/3m2Yh7r/SuperFast-Brand-Image.png",
+      image: "https://i.ibb.co/3m2Yh7r/Appzeto-Brand-Image.png",
       data: {
         type: isAwaitingOnlinePayment
           ? "order_created_pending_payment"
@@ -2430,7 +2431,7 @@ export async function verifyPayment(userId, dto) {
   await notifyOwnersSafely([{ ownerType: "USER", ownerId: userId }], {
     title: "Payment Successful! ✅",
     body: `We have received your payment of ₹${order.payment.amountDue} for Order #${order.orderId}.`,
-    image: "https://i.ibb.co/3m2Yh7r/SuperFast-Brand-Image.png",
+    image: "https://i.ibb.co/3m2Yh7r/Appzeto-Brand-Image.png",
     data: {
       type: "payment_success",
       orderId: String(order.orderId),
@@ -2534,7 +2535,7 @@ export async function tryAutoAssign(orderId, options = {}) {
             { ownerType: 'DELIVERY_PARTNER', ownerId: best.partnerId },
             {
                 title: 'New order assigned! 🛵',
-                body: `You have 60 seconds to accept Order #${order.orderId}.`,
+                body: `You have 30 seconds to accept Order #${order.orderId}.`,
                 data: {
                     type: 'new_order',
                     orderId: order.orderId,
@@ -2547,19 +2548,19 @@ export async function tryAutoAssign(orderId, options = {}) {
         logger.error(`SmartDispatch: Failed to notify partner ${best.partnerId}: ${err.message}`);
     }
 
-    // ⏱️ Schedule a timeout check in 60 seconds
+    // ⏱️ Schedule a timeout check in 30 seconds
     await addOrderJob({
         action: 'DISPATCH_TIMEOUT_CHECK',
         orderMongoId: order._id.toString(),
         orderId: order.orderId,
         partnerId: best.partnerId.toString()
-    }, { delay: 60000 }); // 60 seconds
+    }, { delay: 30000 }); // 30 seconds
 
     return order;
 }
 
 /**
- * Triggered by worker after 60 seconds of zero response.
+ * Triggered by worker after 30 seconds of zero response.
  */
 export async function processDispatchTimeout(orderId, partnerId) {
     const order = await FoodOrder.findById(orderId);
@@ -2836,7 +2837,7 @@ export async function cancelOrder(orderId, userId, reason, refundTo) {
     {
       title: "Order Cancelled ❌",
       body: `Order #${order.orderId} has been cancelled successfully.${refundPolicyDetail}`,
-      image: "https://i.ibb.co/3m2Yh7r/SuperFast-Brand-Image.png",
+      image: "https://i.ibb.co/3m2Yh7r/Appzeto-Brand-Image.png",
       data: {
         type: "order_cancelled",
         orderId: String(order.orderId),
@@ -2973,6 +2974,11 @@ export async function updateOrderStatusRestaurant(
   });
   if (!order) throw new NotFoundError("Order not found");
   const from = order.orderStatus;
+
+  if (!isStatusAdvance(from, orderStatus)) {
+    throw new ValidationError(`Current order status '${from}' is further ahead than '${orderStatus}'. Order cannot be moved backwards or updated after cancellation.`);
+  }
+
   order.orderStatus = orderStatus;
   pushStatusHistory(order, {
     byRole: "RESTAURANT",
@@ -3044,7 +3050,7 @@ export async function updateOrderStatusRestaurant(
       {
         title: title,
         body: body,
-        image: "https://i.ibb.co/3m2Yh7r/SuperFast-Brand-Image.png",
+        image: "https://i.ibb.co/3m2Yh7r/Appzeto-Brand-Image.png",
         data: {
           type: "order_status_update",
           orderId: order.orderId,
@@ -3060,7 +3066,7 @@ export async function updateOrderStatusRestaurant(
       {
         title: title,
         body: body,
-        image: "https://i.ibb.co/3m2Yh7r/SuperFast-Brand-Image.png",
+        image: "https://i.ibb.co/3m2Yh7r/Appzeto-Brand-Image.png",
         data: {
           type: "order_status_update",
           orderId: order.orderId,
@@ -3102,7 +3108,7 @@ export async function updateOrderStatusRestaurant(
         {
           title: riderTitle,
           body: riderBody,
-          image: "https://i.ibb.co/3m2Yh7r/SuperFast-Brand-Image.png",
+          image: "https://i.ibb.co/3m2Yh7r/Appzeto-Brand-Image.png",
           data: {
             type: "order_status_update",
             orderId: order.orderId,
@@ -3808,7 +3814,7 @@ export async function confirmReachedPickupDelivery(orderId, deliveryPartnerId) {
       {
         title: "Rider Arrived! 🛵",
         body: `${partner?.name || "The delivery partner"} has arrived at your restaurant to pick up the order.`,
-        image: "https://i.ibb.co/3m2Yh7r/SuperFast-Brand-Image.png",
+        image: "https://i.ibb.co/3m2Yh7r/Appzeto-Brand-Image.png",
         data: {
           type: "rider_arrived",
           orderId: String(order.orderId),
@@ -4784,9 +4790,21 @@ export async function resyncState(userId, role) {
   return { activeOrder, pendingOffers };
 }
 
+export async function updateOrderInstructions(orderId, userId, instructions) {
+  const identity = buildOrderIdentityFilter(orderId);
+  if (!identity) throw new ValidationError('Order id required');
 
+  const order = await FoodOrder.findOne({ ...identity, userId });
+  if (!order) {
+    throw new NotFoundError('Order not found');
+  }
 
+  order.note = String(instructions || '').trim();
+  await order.save();
 
+  if (typeof emitOrderUpdate === 'function') {
+    emitOrderUpdate(order, order.dispatch?.deliveryPartnerId);
+  }
 
-
-
+  return sanitizeOrderForExternal(order);
+}

@@ -38,6 +38,7 @@ import {
   Plus,
   Check,
   Share2,
+  Cake,
 } from "lucide-react";
 import { motion, AnimatePresence, useScroll } from "framer-motion";
 import {
@@ -104,7 +105,10 @@ import VegModePopups from "@food/components/user/VegModePopups";
 import * as imgUtils from "@food/utils/imageUtils";
 import { useFoodHomeData } from "@food/hooks/useFoodHomeData";
 import { getCachedSettings } from "@/modules/common/utils/businessSettings";
+import { useServiceability } from "@/modules/common/hooks/useServiceability";
+import ServiceUnavailable from "@/modules/common/components/ServiceUnavailable";
 import bakeryIcon from "@food/assets/explore more icons/bakery.png";
+import customLogo from "@food/assets/customl_ogo.png";
 
 // Extracted Sub-components
 const BannerSection = lazy(() => import("@food/components/user/home/BannerSection"));
@@ -117,6 +121,7 @@ const ExploreMoreSection = lazy(() => import("@food/components/user/home/Explore
 const MiniCart = lazy(() => import("@food/components/user/MiniCart"));
 const OrderTrackingCard = lazy(() => import("@food/components/user/OrderTrackingCard"));
 const QuickCommerceHomePage = lazy(() => import("../../../quickCommerce/user/pages/Home"));
+const DudhwalaHomeScreen = lazy(() => import("../../../Dudhwala/screens/HomeScreen"));
 
 // Animated placeholder for search - moved outside component to prevent recreation
 const placeholders = [
@@ -174,32 +179,13 @@ export default function Home() {
   const routerLocation = useRouterLocation();
 
   // --- Location Logic ---
-  const { location } = useLocation();
-  const { zoneId: liveZoneId, isInService: isLiveInService } = useZone(location);
-  const defaultSavedAddress = useMemo(() => getDefaultAddress?.() || null, [getDefaultAddress]);
-  const defaultSavedAddressLocation = useMemo(() => {
-    if (!defaultSavedAddress) return null;
-    const coords = defaultSavedAddress.location?.coordinates;
-    if (Array.isArray(coords) && coords.length >= 2) {
-      return {
-        latitude: coords[1],
-        longitude: coords[0],
-        address: defaultSavedAddress.address || "",
-        formattedAddress: defaultSavedAddress.address || "",
-        city: defaultSavedAddress.city || "",
-        state: defaultSavedAddress.state || "",
-        area: defaultSavedAddress.area || defaultSavedAddress.landmark || "",
-        additionalDetails: defaultSavedAddress.flatNo || "",
-        label: defaultSavedAddress.label || ""
-      };
-    }
-    return null;
-  }, [defaultSavedAddress]);
-  const { zoneId: savedZoneId, isInService: isSavedInService } = useZone(defaultSavedAddressLocation);
+  const { location, deliveryAddressMode } = useLocation();
+  const { zoneId: effectiveZoneId, isInService: isLiveInService, isOutOfService: isEffectiveOutOfService } = useZone(location);
 
-  const deliveryAddressMode = getStoredDeliveryAddressMode();
-  const effectiveZoneId = (deliveryAddressMode === "current" ? liveZoneId : savedZoneId) || liveZoneId;
-  const effectiveLocation = (deliveryAddressMode === "current" ? location : defaultSavedAddressLocation) || location;
+  // --- Serviceability ---
+  const { isModuleEnabled, loading: serviceabilityLoading } = useServiceability(activeTab);
+  
+  const hideExtras = !isModuleEnabled || isEffectiveOutOfService;
 
   // --- Core Data Hook ---
   const {
@@ -212,7 +198,7 @@ export default function Home() {
     state
   } = useFoodHomeData({
     zoneId: effectiveZoneId,
-    location: effectiveLocation,
+    location: location,
     vegMode,
     backendOrigin: BACKEND_ORIGIN,
     availabilityTick
@@ -282,9 +268,11 @@ export default function Home() {
   useEffect(() => {
     const path = routerLocation.pathname;
     const isQuick = path.endsWith("/quick") || path.includes("/quick/");
+    const isMilk = path.endsWith("/dudhwala") || path.includes("/dudhwala/");
 
     let targetTab = "food";
     if (isQuick) targetTab = "quick";
+    else if (isMilk) targetTab = "milk";
 
     if (activeTab !== targetTab) setActiveTab(targetTab);
   }, [routerLocation.pathname, activeTab]);
@@ -293,6 +281,7 @@ export default function Home() {
   const handleTabChange = (tab) => {
     startTransition(() => setActiveTab(tab));
     if (tab === "quick") navigate("/quick", { replace: true });
+    else if (tab === "milk") navigate("/dudhwala", { replace: true });
     else navigate("/food/user", { replace: true });
   };
 
@@ -326,7 +315,7 @@ export default function Home() {
             activeTab={activeTab}
             setActiveTab={handleTabChange}
             location={location}
-            savedAddressText={imgUtils.formatSavedAddress(effectiveLocation)}
+            savedAddressText={imgUtils.formatSavedAddress(location)}
             handleLocationClick={() => openLocationSelector()}
             handleSearchFocus={handleSearchFocus}
             placeholderIndex={placeholderIndex}
@@ -335,6 +324,7 @@ export default function Home() {
             onVegModeChange={handleVegModeChange}
             headerVideoUrl={landing.videoUrl}
             quickThemeColor={quickThemeColor}
+            hideExtras={hideExtras}
             bannerComponent={
               <div className="h-[130px] sm:h-36 md:h-44 mt-3 relative z-10 w-full bg-transparent" />
             }
@@ -343,7 +333,21 @@ export default function Home() {
       </div>
 
       <AnimatePresence initial={false} mode="wait">
-        {activeTab === "food" ? (
+        {hideExtras ? (
+          <motion.div
+            key="unavailable"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="bg-white dark:bg-[#0a0a0a]"
+          >
+            <ServiceUnavailable 
+              type={!isModuleEnabled ? "module" : "zone"} 
+              moduleName={activeTab === 'food' ? 'Food Delivery' : activeTab === 'quick' ? 'ChotuuMart' : 'ChotuuDudhwala'}
+              onRefresh={() => window.location.reload()}
+            />
+          </motion.div>
+        ) : activeTab === "food" ? (
           <motion.div
             key="food-content"
             initial={{ opacity: 0 }}
@@ -403,6 +407,57 @@ export default function Home() {
               />
             </Suspense>
 
+            <div className="px-4 py-4 md:py-6 mt-2 mx-auto max-w-7xl">
+              <motion.div 
+                whileHover={{ scale: 1.01 }}
+                className="bg-gradient-to-r from-fuchsia-600 via-pink-500 to-rose-500 rounded-2xl p-5 sm:p-6 md:p-8 flex flex-col-reverse lg:flex-row items-center justify-between gap-6 sm:gap-8 shadow-[0_8px_30px_rgb(236,72,153,0.3)] relative overflow-hidden"
+              >
+                {/* Background Decor */}
+                <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+
+                {/* Left Side: Text Content & Button */}
+                <div className="flex-1 z-10 flex flex-col items-center lg:items-start text-center lg:text-left gap-4 w-full">
+                  <div className="flex flex-col gap-1 sm:gap-2">
+                    <h3 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white drop-shadow-md tracking-tight leading-tight">
+                      Custom Cake Chahiye? <br className="hidden lg:block" />
+                      <span className="text-yellow-200">Bas Chotuu Ko Bataiye!</span> 🎂
+                    </h3>
+                    <p className="text-white/95 text-sm sm:text-base font-semibold drop-shadow-sm">
+                      Dream it, we bake it! ✨
+                    </p>
+                  </div>
+                  
+                  <Button asChild className="mt-2 bg-white text-pink-600 hover:bg-pink-50 hover:text-pink-700 rounded-xl shadow-[0_6px_15px_rgba(0,0,0,0.1)] border-0 px-6 py-5 w-full sm:w-auto text-base font-bold transition-all hover:-translate-y-1 active:scale-95 group whitespace-nowrap">
+                    <Link to="/food/user/custom-cakes" className="flex items-center justify-center gap-2">
+                      Explore Now
+                      <motion.div
+                        animate={{ x: [0, 4, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                        className="text-lg"
+                      >
+                        🚀
+                      </motion.div>
+                    </Link>
+                  </Button>
+                </div>
+                
+                {/* Right Side: Logo Container (No box, larger) */}
+                <motion.div 
+                  initial={{ rotate: -5, scale: 0.9 }}
+                  animate={{ rotate: 0, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 10 }}
+                  className="z-10 w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 shrink-0 flex items-center justify-center pointer-events-none"
+                >
+                  <img 
+                    src={customLogo} 
+                    alt="Custom Cake Logo" 
+                    className="w-full h-full object-contain drop-shadow-[0_10px_25px_rgba(0,0,0,0.25)]"
+                  />
+                </motion.div>
+              </motion.div>
+            </div>
+
             <Suspense fallback={<RestaurantGridSkeleton count={3} />}>
               <RestaurantGrid
                 filteredRestaurants={restaurants.visible}
@@ -454,7 +509,20 @@ export default function Home() {
               </QuickCartProvider>
             </QuickLocationProvider>
           </motion.div>
-        ) : null}
+        ) : (
+          <motion.div
+            key="milk-content"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16, ease: "easeOut" }}
+            className="bg-white dark:bg-[#0a0a0a]"
+          >
+            <Suspense fallback={<div className="h-screen w-full bg-white dark:bg-[#0a0a0a]" />}>
+              <DudhwalaHomeScreen />
+            </Suspense>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Veg Mode Popups (Enable / Switch Off) */}
@@ -498,8 +566,8 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {activeTab === "food" && hasFoodCartItems && <Suspense fallback={null}><MiniCart /></Suspense>}
-      <Suspense fallback={null}><OrderTrackingCard hasBottomNav /></Suspense>
+      {activeTab === "food" && hasFoodCartItems && !hideExtras && <Suspense fallback={null}><MiniCart /></Suspense>}
+      {!hideExtras && <Suspense fallback={null}><OrderTrackingCard hasBottomNav /></Suspense>}
     </div>
   );
 }

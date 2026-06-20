@@ -1,4 +1,4 @@
-# 🚀 SuperFast Food Module - Performance Optimization Report
+# 🚀 AppZeto Food Module - Performance Optimization Report
 
 This document outlines the architectural and technical improvements made to the Food Module Home Page to achieve "Instant Loading" and high-responsiveness.
 

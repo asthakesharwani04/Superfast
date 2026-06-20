@@ -565,7 +565,7 @@ export default function RestaurantOnboarding() {
                 }))
 
                 if (!matchedZoneId) {
-                  toast.warning("Your current location is outside SuperFast service zones.")
+                  toast.warning("Your current location is outside OyeChotuu service zones.")
                 } else {
                   toast.success("Location updated successfully!")
                 }
@@ -765,7 +765,8 @@ export default function RestaurantOnboarding() {
 
   // Load from localStorage on mount and check URL parameter
   useEffect(() => {
-    setVerifiedPhoneNumber(getVerifiedPhoneFromStoredRestaurant())
+    const currentPhone = getVerifiedPhoneFromStoredRestaurant()
+    setVerifiedPhoneNumber(currentPhone)
 
     // Check if step is specified in URL (from OTP login redirect)
     const stepParam = searchParams.get("step")
@@ -778,7 +779,17 @@ export default function RestaurantOnboarding() {
       goToStep(1, { replace: true })
     }
 
-    const localData = loadOnboardingFromLocalStorage()
+    let localData = loadOnboardingFromLocalStorage()
+    
+    // If the phone number changed, clear old onboarding data
+    if (localData && localData.step1 && localData.step1.ownerPhone && currentPhone) {
+      if (normalizePhoneDigits(localData.step1.ownerPhone) !== normalizePhoneDigits(currentPhone)) {
+        clearOnboardingFromLocalStorage()
+        clearOnboardingFileCache()
+        localData = null // act as if no local data
+      }
+    }
+
     if (localData) {
       if (localData.step1) {
         setStep1({
@@ -1163,6 +1174,21 @@ export default function RestaurantOnboarding() {
     }
     if (!step2.closingTime?.trim()) {
       errors.push("Closing time is required")
+    }
+    if (step2.openingTime?.trim() && step2.closingTime?.trim()) {
+      const openTimeStr = normalizeTimeValue(step2.openingTime);
+      const closeTimeStr = normalizeTimeValue(step2.closingTime);
+      if (openTimeStr && closeTimeStr) {
+        const [openH, openM] = openTimeStr.split(":").map(Number);
+        const [closeH, closeM] = closeTimeStr.split(":").map(Number);
+        const openMins = (openH || 0) * 60 + (openM || 0);
+        const closeMins = (closeH || 0) * 60 + (closeM || 0);
+        if (openMins === closeMins) {
+          errors.push("Opening time and closing time cannot be same");
+        } else if (closeMins < openMins) {
+          errors.push("Closing time cannot be less than opening time");
+        }
+      }
     }
     if (!step2.openDays || step2.openDays.length === 0) {
       errors.push("Please select at least one open day")
@@ -1881,7 +1907,7 @@ export default function RestaurantOnboarding() {
           }))
 
           if (!matchedZoneId) {
-            toast.warning("Selected address is outside SuperFast service zones.")
+            toast.warning("Selected address is outside OyeChotuu service zones.")
           } else {
             toast.success("Zone auto-selected based on address!")
           }

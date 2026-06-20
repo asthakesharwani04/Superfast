@@ -10,7 +10,7 @@ const emptyResponse = (result = {}) =>
   });
 
 const mapBusinessSettings = (raw = {}) => ({
-  appName: raw.companyName || 'SuperFast',
+  appName: raw.companyName || 'Appzeto',
   supportEmail: raw.email || '',
   supportPhone: raw.phone?.number || '',
   currencySymbol: 'Rs',
@@ -30,7 +30,7 @@ const mapBusinessSettings = (raw = {}) => ({
   youtube: '',
   playStoreLink: '',
   appStoreLink: '',
-  metaTitle: raw.companyName || 'SuperFast',
+  metaTitle: raw.companyName || 'Appzeto',
   metaDescription: '',
   metaKeywords: '',
   keywords: [],
@@ -38,8 +38,8 @@ const mapBusinessSettings = (raw = {}) => ({
 });
 
 const buildSettingsPayload = (data = {}) => ({
-  companyName: data.companyName || data.appName || 'SuperFast',
-  email: data.supportEmail || 'admin@superfast.com',
+  companyName: data.companyName || data.appName || 'Appzeto',
+  email: data.supportEmail || 'admin@appzeto.com',
   phoneCountryCode: '+91',
   phoneNumber: String(data.supportPhone || '').replace(/\D/g, '') || '9999999999',
   address: data.address || '',
@@ -326,6 +326,7 @@ export const adminApi = {
   getUserById: () => emptyResponse({}),
   approveSeller: (sellerId, data = {}) => axiosInstance.put(`/quick-commerce/admin/seller-requests/${sellerId}/approve`, data),
   getAdminWalletData: () => emptyResponse({}),
+  getFinanceTransactions: (params) => axiosInstance.get('/quick-commerce/admin/finance/transactions', { params }),
   getReports: () => emptyResponse([]),
   getFeeSettings: () => axiosInstance.get('/quick-commerce/admin/fee-settings'),
   createOrUpdateFeeSettings: (body) =>
@@ -429,4 +430,13 @@ export const adminApi = {
   updateSellerCommission: (id, payload) => axiosInstance.put(`/quick-commerce/admin/seller-commissions/${id}`, payload),
   deleteSellerCommission: (id) => axiosInstance.delete(`/quick-commerce/admin/seller-commissions/${id}`),
   toggleSellerCommissionStatus: (id) => axiosInstance.patch(`/quick-commerce/admin/seller-commissions/${id}/toggle-status`),
+
+  getReturns: () => axiosInstance.get('/quick-commerce/admin/returns'),
+  getReturnSettings: () => axiosInstance.get('/quick-commerce/admin/returns/settings'),
+  updateReturnSettings: (data) => axiosInstance.put('/quick-commerce/admin/returns/settings', data),
+  getReturnDetails: (id) => axiosInstance.get(`/quick-commerce/admin/returns/${id}`),
+  updateReturnAction: (id, endpoint, payload) => {
+    const method = endpoint === "broadcast" ? "post" : "put";
+    return axiosInstance[method](`/quick-commerce/admin/returns/${id}/${endpoint}`, payload);
+  },
 };

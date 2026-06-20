@@ -72,10 +72,20 @@ export const quickAdminSidebarMenu = [
           { label: "Send Money", path: "/admin/quick-commerce/delivery-funds" },
         ],
       },
-      { type: "link", label: "Wallet", path: "/admin/quick-commerce/wallet", icon: "Wallet" },
+      // { type: "link", label: "Wallet", path: "/admin/quick-commerce/wallet", icon: "Wallet" },
+      { type: "link", label: "Transaction Report", path: "/admin/quick-commerce/transactions", icon: "FileText" },
       { type: "link", label: "Money Requests", path: "/admin/quick-commerce/withdrawals", icon: "CreditCard" },
       { type: "link", label: "Seller Payments", path: "/admin/quick-commerce/seller-transactions", icon: "Receipt" },
       { type: "link", label: "Collect Cash", path: "/admin/quick-commerce/cash-collection", icon: "IndianRupee" },
+      {
+        type: "expandable",
+        label: "Returns",
+        icon: "Package",
+        subItems: [
+          { label: "Return Requests", path: "/admin/quick-commerce/returns" },
+          { label: "Return Settings", path: "/admin/quick-commerce/returns/settings" },
+        ],
+      },
       {
         type: "expandable",
         label: "Orders",

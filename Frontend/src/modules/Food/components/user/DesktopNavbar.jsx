@@ -18,7 +18,7 @@ const debugWarn = (...args) => {}
 const debugError = (...args) => {}
 
 
-export default function DesktopNavbar({ showLogo = true }) {
+export default function DesktopNavbar({ showLogo = true, hideExtras = false }) {
     const location = useLocation()
     const { isAuthenticated } = useAuth()
     const navigate = useNavigate()
@@ -59,7 +59,8 @@ export default function DesktopNavbar({ showLogo = true }) {
             : location.pathname
     const profileSource = new URLSearchParams(location.search).get("from")
     const isQuick = normalizedPath === "/quick" || normalizedPath.startsWith("/quick/")
-    const isDining = location.pathname === "/food/user/dining" || location.pathname === "/food/dining"
+    const isBakery = location.pathname.startsWith("/food/user/bakery") || location.pathname.startsWith("/food/bakery")
+    const isDudhwala = location.pathname.startsWith("/dudhwala")
     const isUnder250 = location.pathname === "/food/user/under-250" || location.pathname === "/food/under-250"
     const isSharedFoodProfile =
         (normalizedPath === "/profile" || normalizedPath.startsWith("/profile/")) &&
@@ -68,7 +69,7 @@ export default function DesktopNavbar({ showLogo = true }) {
         location.pathname.startsWith("/food/user/profile") ||
         location.pathname.startsWith("/food/profile") ||
         isSharedFoodProfile
-    const isDelivery = !isDining && !isUnder250 && !isProfile && !isQuick && (location.pathname === "/food/user" || location.pathname === "/food" || (location.pathname.startsWith("/food/user") && !location.pathname.includes("/dining") && !location.pathname.includes("/under-250") && !location.pathname.includes("/profile")))
+    const isDelivery = !isBakery && !isDudhwala && !isUnder250 && !isProfile && !isQuick && (location.pathname === "/food/user" || location.pathname === "/food" || (location.pathname.startsWith("/food/user") && !location.pathname.includes("/bakery") && !location.pathname.includes("/under-250") && !location.pathname.includes("/profile")))
     const isBannerRoute =
         location.pathname === "/food/user" ||
         location.pathname === "/food" ||
@@ -186,7 +187,7 @@ export default function DesktopNavbar({ showLogo = true }) {
                                         />
                                     ) : (
                                         <span className="text-xl font-bold text-gray-900 dark:text-white">
-                                          {companyName || "SuperFast"}
+                                          {companyName || "Appzeto"}
                                         </span>
                                     )}
                                 </Link>
@@ -227,8 +228,9 @@ export default function DesktopNavbar({ showLogo = true }) {
                         </div>
 
                         {/* Center: Search Bar & Veg Mode */}
-                        <div className="flex-1 max-w-3xl mx-4 flex items-center gap-4">
-                            {/* Search Bar */}
+                        {!hideExtras && (
+                            <div className="flex-1 max-w-3xl mx-4 flex items-center gap-4">
+                                {/* Search Bar */}
                             <div className="relative flex-1">
                                 <div className="relative bg-gray-100 dark:bg-[#2a2a2a] rounded-lg transition-all duration-300 focus-within:ring-2 focus-within:ring-[#cc2532] focus-within:bg-white dark:focus-within:bg-[#1a1a1a] border border-transparent focus-within:border-[#cc2532]/20">
                                     <div className="flex items-center px-3 py-2">
@@ -279,11 +281,13 @@ export default function DesktopNavbar({ showLogo = true }) {
                                     className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-gray-300 dark:data-[state=unchecked]:bg-gray-600 h-5 w-9"
                                 />
                             </div>
-                        </div>
+                            </div>
+                        )}
 
                         {/* Right: Wallet and Cart Icons */}
-                        <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0">
-                            {/* Wallet Icon */}
+                        {!hideExtras && (
+                            <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0">
+                                {/* Wallet Icon */}
                             <Link to="/food/user/wallet">
                                 <Button
                                     variant="ghost"
@@ -309,17 +313,19 @@ export default function DesktopNavbar({ showLogo = true }) {
                                     )}
                                 </Button>
                             </Link>
-                        </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
 
             {/* Bottom Row: Navigation Tabs & Veg Mode */}
-            <div className={`w-full pb-3 ${(isBannerRoute && !hasScrolledPastBanner) ? "bg-transparent !bg-transparent" : "bg-white dark:bg-[#1a1a1a]"}`}>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {!hideExtras && (
+                <div className={`w-full pb-3 ${(isBannerRoute && !hasScrolledPastBanner) ? "bg-transparent !bg-transparent" : "bg-white dark:bg-[#1a1a1a]"}`}>
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-center h-12">
                         {/* Navigation Tabs - Centered with spacing */}
-                        <div className="flex items-center space-x-24">
+                        <div className="flex items-center space-x-12 lg:space-x-16">
                             {/* Delivery Tab */}
                             <Link
                                 to="/food/user"
@@ -380,16 +386,36 @@ export default function DesktopNavbar({ showLogo = true }) {
                                 )}
                             </Link>
 
-                            {/* Dining Tab */}
+                            {/* Bakery Tab */}
                             <Link
-                                to="/food/user/dining"
-                                className={`flex flex-col items-center gap-1 px-2 py-1 transition-colors relative group ${isDining
+                                to="/food/user/bakery/list"
+                                className={`flex flex-col items-center gap-1 px-2 py-1 transition-colors relative group ${isBakery
                                     ? "text-[#cc2532] dark:text-[#cc2532]"
                                     : "text-gray-600 dark:text-gray-400 hover:text-[#cc2532] dark:hover:text-[#cc2532]"
                                     }`}
                             >
-                                <span className="text-sm font-bold tracking-wide uppercase">Dining</span>
-                                {isDining && (
+                                <span className="text-sm font-bold tracking-wide uppercase">Bakery</span>
+                                {isBakery && (
+                                    <motion.div
+                                        layoutId="navIndicator"
+                                        className="absolute -bottom-3 left-0 right-0 h-0.5 bg-[#cc2532] dark:bg-[#cc2532]"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ duration: 0.3 }}
+                                    />
+                                )}
+                            </Link>
+
+                            {/* Dudhwala Tab */}
+                            <Link
+                                to="/dudhwala"
+                                className={`flex flex-col items-center gap-1 px-2 py-1 transition-colors relative group ${isDudhwala
+                                    ? "text-[#cc2532] dark:text-[#cc2532]"
+                                    : "text-gray-600 dark:text-gray-400 hover:text-[#cc2532] dark:hover:text-[#cc2532]"
+                                    }`}
+                            >
+                                <span className="text-sm font-bold tracking-wide uppercase">Dudhwala</span>
+                                {isDudhwala && (
                                     <motion.div
                                         layoutId="navIndicator"
                                         className="absolute -bottom-3 left-0 right-0 h-0.5 bg-[#cc2532] dark:bg-[#cc2532]"
@@ -420,10 +446,11 @@ export default function DesktopNavbar({ showLogo = true }) {
                                     />
                                 )}
                             </Link>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
         </nav>
     )
 }

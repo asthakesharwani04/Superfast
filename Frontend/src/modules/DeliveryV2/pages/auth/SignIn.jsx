@@ -3,7 +3,7 @@ import { useNavigate, Link, useLocation } from "react-router-dom"
 import { ShieldCheck, Phone, ArrowRight, Loader2, ConciergeBell, Soup, Utensils, Home } from "lucide-react"
 import { Button } from "@food/components/ui/button"
 import { deliveryAPI } from "@food/api"
-import { clearModuleAuth } from "@food/utils/auth"
+import { clearModuleAuth, isModuleAuthenticated } from "@food/utils/auth"
 import { useCompanyName } from "@food/hooks/useCompanyName"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
@@ -25,9 +25,11 @@ export default function DeliverySignIn() {
   const location = useLocation()
   const searchParams = new URLSearchParams(location.search)
   const referralCode = searchParams.get("ref") || ""
-  const [formData, setFormData] = useState({
-    phone: "",
-    countryCode: "+91",
+  const [formData, setFormData] = useState(() => {
+    return {
+      phone: sessionStorage.getItem("deliverySignInPhone") || "",
+      countryCode: "+91",
+    }
   })
 
   // Pre-fill form from sessionStorage if data exists (e.g., when coming back from OTP)
@@ -53,6 +55,12 @@ export default function DeliverySignIn() {
   const [isSending, setIsSending] = useState(false)
   const [logoUrl, setLogoUrl] = useState(() => getCachedSettings()?.logo?.url || null)
   const [keyboardInset, setKeyboardInset] = useState(0)
+
+  useEffect(() => {
+    if (isModuleAuthenticated("delivery")) {
+      navigate("/food/delivery", { replace: true })
+    }
+  }, [navigate])
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -83,16 +91,7 @@ export default function DeliverySignIn() {
     }
   }, [])
 
-  useEffect(() => {
-    if (keyboardInset > 0) {
-      const activeElement = document.activeElement;
-      if (activeElement && (activeElement.tagName === "INPUT" || activeElement.tagName === "TEXTAREA")) {
-        setTimeout(() => {
-          activeElement.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 150);
-      }
-    }
-  }, [keyboardInset]);
+
 
   // Get selected country details dynamically
   const selectedCountry = countryCodes.find(c => c.code === formData.countryCode) || countryCodes[2] // Default to India (+91)
@@ -157,7 +156,7 @@ export default function DeliverySignIn() {
       }
 
       // Navigate to OTP page
-      navigate("/food/delivery/otp")
+      navigate("/food/delivery/otp", { replace: true })
     } catch (err) {
       debugError("Send OTP Error:", err)
       const message =
@@ -179,6 +178,7 @@ export default function DeliverySignIn() {
       ...formData,
       phone: value,
     })
+    sessionStorage.setItem("deliverySignInPhone", value)
   }
 
   const handleCountryCodeChange = (value) => {
@@ -193,7 +193,7 @@ export default function DeliverySignIn() {
 
   return (
     <div
-      className={`h-[100dvh] bg-[#fafafa] flex flex-col relative font-sans ${keyboardInset > 0 ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden"}`}
+      className="h-[100dvh] bg-[#fafafa] flex flex-col relative font-sans overflow-hidden"
       style={{ paddingBottom: keyboardInset ? `${keyboardInset + 24}px` : undefined }}
     >
       {/* Top Blue Section */}
@@ -277,7 +277,7 @@ export default function DeliverySignIn() {
         </div>
       </div>
 
-      <div className="flex-1 max-w-[420px] mx-auto w-full px-4 flex flex-col mt-16 md:mt-20 relative z-20 pb-4 h-full">
+      <div className="flex-1 max-w-[420px] mx-auto w-full px-4 flex flex-col mt-16 md:mt-20 relative z-20 pb-4 h-full overflow-y-auto">
         {/* Main Card */}
         <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-gray-100 shrink-0 mb-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="text-center mb-5">

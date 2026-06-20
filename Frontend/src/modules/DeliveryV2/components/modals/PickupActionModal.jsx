@@ -54,7 +54,7 @@ export const PickupActionModal = ({
         return;
       }
 
-      const res = await uploadAPI.uploadMedia(finalFile, { folder: 'superfast/delivery/bills' });
+      const res = await uploadAPI.uploadMedia(finalFile, { folder: 'appzeto/delivery/bills' });
       if (res?.data?.success && res?.data?.data) {
         setBillImageUrl(res.data.data.url || res.data.data.secure_url);
         setBillImageUploaded(true);

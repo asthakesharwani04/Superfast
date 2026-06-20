@@ -10,6 +10,8 @@ import {
   getProductReviews,
   submitProductReview,
   getProducts,
+  getStores,
+  getStoreDetails,
 } from "../controllers/catalog.controller.js";
 import {
   addToCart,
@@ -23,6 +25,7 @@ import {
   getMyOrders,
   getOrderById,
   placeOrder,
+  verifyPayment,
 } from "../controllers/order.controller.js";
 import {
   addToWishlist,
@@ -73,6 +76,7 @@ import {
   deleteAdminOfferSection,
   reorderAdminOfferSections,
   getAdminFinanceSummary,
+  getAdminFinanceTransactions,
   getAdminFinanceLedger,
   getAdminFinancePayouts,
   getAdminSellerWithdrawals,
@@ -147,6 +151,8 @@ router.get("/coupons", getCoupons);
 router.post("/coupons/apply", applyCoupon);
 router.get("/categories", getCategories);
 router.get("/products", getProducts);
+router.get("/stores", getStores);
+router.get("/stores/:storeId", getStoreDetails);
 router.get("/products/:productId/reviews", getProductReviews);
 router.post("/products/reviews", optionalAuth, submitProductReview);
 router.get("/products/:productId", getProductById);
@@ -164,6 +170,7 @@ router.delete("/cart/remove/:productId", optionalAuth, removeCartItem);
 router.delete("/cart/clear", optionalAuth, clearCart);
 
 router.post("/orders", optionalAuth, placeOrder);
+router.post("/orders/:orderId/verify-payment", optionalAuth, verifyPayment);
 router.get("/orders", optionalAuth, getMyOrders);
 router.get("/orders/:orderId", optionalAuth, getOrderById);
 router.post("/orders/:orderId/cancel", optionalAuth, cancelOrder);
@@ -216,6 +223,7 @@ router.get("/admin/orders/:orderId", ...adminOnly, getAdminOrderById);
 router.delete("/admin/orders/:orderId", ...adminOnly, deleteAdminOrder);
 
 // Finance (quick-commerce admin wallet & ledger)
+router.get("/admin/finance/transactions", ...adminOnly, getAdminFinanceTransactions);
 router.get("/admin/finance/summary", ...adminOnly, getAdminFinanceSummary);
 router.get("/admin/finance/ledger", ...adminOnly, getAdminFinanceLedger);
 router.get("/admin/finance/payouts", ...adminOnly, getAdminFinancePayouts);

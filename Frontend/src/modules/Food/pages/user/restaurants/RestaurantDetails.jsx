@@ -513,7 +513,7 @@ function RestaurantDetailsContent() {
               || null,
             priceRange: actualRestaurant?.priceRange || apiRestaurant?.priceRange || onboardingStep4?.priceRange || "$$",
             offers: Array.isArray(actualRestaurant?.offers) ? actualRestaurant.offers : (Array.isArray(apiRestaurant?.offers) ? apiRestaurant.offers : []), // Will be populated from menu/offers API later
-            offerText: actualRestaurant?.offer || apiRestaurant?.offer || onboardingStep4?.offer || "FLAT 50% OFF",
+            offerText: actualRestaurant?.offer || apiRestaurant?.offer || onboardingStep4?.offer || "",
             offerCount: actualRestaurant?.offerCount || apiRestaurant?.offerCount || 0,
             restaurantOffers: {
               goldOffer: {
@@ -1447,12 +1447,15 @@ function RestaurantDetailsContent() {
       return
     }
 
+    const isBakery = restaurant?.businessType === 'homebakery' || restaurant?.businessType === 'home_bakery';
+    const entityName = isBakery ? "Bakery" : "Restaurant";
+
     const isAlreadyFavorite = isFavorite(restaurantSlug)
 
     if (isAlreadyFavorite) {
       // Remove from collection
       removeFavorite(restaurantSlug)
-      toast.success("Restaurant removed from collection")
+      toast.success(`${entityName} removed from collection`)
     } else {
       // Add to collection
       addFavorite({
@@ -1465,7 +1468,7 @@ function RestaurantDetailsContent() {
         priceRange: restaurant.priceRange || "",
         image: restaurant.profileImageUrl?.url || restaurant.image || ""
       })
-      toast.success("Restaurant added to collection")
+      toast.success(`${entityName} added to collection`)
     }
 
     setShowMenuOptionsSheet(false)
@@ -1908,10 +1911,9 @@ function RestaurantDetailsContent() {
 
   // Highlight offers/texts for the blue offer line
   const highlightOffers = [
-    "Upto 50% OFF",
     restaurant?.offerText || "",
     ...(Array.isArray(restaurant?.offers) ? restaurant.offers.map((offer) => offer?.title || "") : []),
-  ]
+  ].filter(Boolean)
 
   // Auto-rotate images every 3 seconds
   useEffect(() => {
@@ -1929,7 +1931,7 @@ function RestaurantDetailsContent() {
   // Auto-rotate highlight offer text every 2 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setHighlightIndex((prev) => (prev + 1) % highlightOffers.length)
+      setHighlightIndex((prev) => highlightOffers.length > 0 ? (prev + 1) % highlightOffers.length : 0)
     }, 2000)
 
     return () => clearInterval(interval)
@@ -2052,7 +2054,7 @@ function RestaurantDetailsContent() {
       </div>
 
       {/* Main Content Card - "Same to Same" Redesign */}
-      <div className="bg-[#F8F9FA] dark:bg-[#0a0a0a] -mt-4 relative z-10 px-4 pt-0 min-h-[50vh]">
+      <div className="bg-[#F8F9FA] dark:bg-[#0a0a0a] relative z-10 px-4 pt-4 min-h-[50vh]">
         <div className="max-w-7xl mx-auto space-y-4">
           {/* Info Card */}
           <div className="bg-white dark:bg-[#1a1a1a] rounded-[28px] shadow-[0_10px_40px_rgb(0,0,0,0.04)] border border-gray-100 dark:border-gray-800 p-5 space-y-4">
@@ -2139,6 +2141,7 @@ function RestaurantDetailsContent() {
         )}
 
         {/* Offer Card */}
+        {highlightOffers.length > 0 && (
         <div className="max-w-7xl mx-auto mt-4 bg-white dark:bg-[#1a1a1a] rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 dark:border-gray-800 p-4 relative overflow-hidden">
            <div className="flex items-center justify-between gap-4">
              <div className="flex items-center gap-4">
@@ -2174,6 +2177,7 @@ function RestaurantDetailsContent() {
               ))}
            </div>
         </div>
+        )}
 
         {isRestaurantOffline && (
           <div className="max-w-7xl mx-auto mt-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-700">
@@ -2542,7 +2546,11 @@ function RestaurantDetailsContent() {
                                     onClick={(e) => {
                                       e.stopPropagation()
                                       if (!shouldShowGrayscale) {
-                                        updateItemQuantity(item, quantity + 1, e)
+                                        if (hasFoodVariants(item) || item.customisable) {
+                                          handleItemClick(item)
+                                        } else {
+                                          updateItemQuantity(item, quantity + 1, e)
+                                        }
                                       }
                                     }}
                                     disabled={shouldShowGrayscale}
@@ -2560,7 +2568,11 @@ function RestaurantDetailsContent() {
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     if (!shouldShowGrayscale) {
-                                      updateItemQuantity(item, 1, e)
+                                      if (hasFoodVariants(item) || item.customisable) {
+                                        handleItemClick(item)
+                                      } else {
+                                        updateItemQuantity(item, 1, e)
+                                      }
                                     }
                                   }}
                                   disabled={shouldShowGrayscale}
@@ -2763,7 +2775,11 @@ function RestaurantDetailsContent() {
                                               onClick={(e) => {
                                                 e.stopPropagation()
                                                 if (!shouldShowGrayscale) {
-                                                  updateItemQuantity(item, quantity + 1, e)
+                                                  if (hasFoodVariants(item) || item.customisable) {
+                                                    handleItemClick(item)
+                                                  } else {
+                                                    updateItemQuantity(item, quantity + 1, e)
+                                                  }
                                                 }
                                               }}
                                               disabled={shouldShowGrayscale}
@@ -2781,7 +2797,11 @@ function RestaurantDetailsContent() {
                                             onClick={(e) => {
                                               e.stopPropagation()
                                               if (!shouldShowGrayscale) {
-                                                updateItemQuantity(item, 1, e)
+                                                if (hasFoodVariants(item) || item.customisable) {
+                                                  handleItemClick(item)
+                                                } else {
+                                                  updateItemQuantity(item, 1, e)
+                                                }
                                               }
                                             }}
                                             disabled={shouldShowGrayscale}
@@ -3051,45 +3071,6 @@ function RestaurantDetailsContent() {
                       </div>
                     </div>
 
-                    {/* Top picks */}
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Top picks:</h3>
-                      <button
-                        onClick={() =>
-                          setFilters((prev) => ({
-                            ...prev,
-                            highlyReordered: !prev.highlyReordered,
-                          }))
-                        }
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all w-full ${filters.highlyReordered
-                          ? "border-[#cc2532] dark:border-[#cc2532] bg-red-50 dark:bg-[#cc2532]/20 text-[#cc2532] dark:text-[#cc2532]"
-                          : "border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
-                          }`}
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                        <span className="font-medium">Highly reordered</span>
-                      </button>
-                    </div>
-
-                    {/* Dietary preference */}
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Dietary preference:</h3>
-                      <button
-                        onClick={() =>
-                          setFilters((prev) => ({
-                            ...prev,
-                            spicy: !prev.spicy,
-                          }))
-                        }
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all w-full ${filters.spicy
-                          ? "border-red-500 dark:border-red-400 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400"
-                          : "border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
-                          }`}
-                      >
-                        <Flame className="h-4 w-4" />
-                        <span className="font-medium">Spicy</span>
-                      </button>
-                    </div>
                   </div>
 
                   {/* Bottom Action Bar */}

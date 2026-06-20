@@ -2,8 +2,8 @@ import mongoose from 'mongoose';
 
 const globalSettingsSchema = new mongoose.Schema(
     {
-        companyName: { type: String, required: true, default: 'SuperFast' },
-        email: { type: String, required: true, default: 'admin@superfast.com' },
+        companyName: { type: String, required: true, default: 'Appzeto' },
+        email: { type: String, required: true, default: 'admin@appzeto.com' },
         phone: {
             countryCode: { type: String, default: '+91' },
             number: { type: String, default: '' }
@@ -26,6 +26,7 @@ const globalSettingsSchema = new mongoose.Schema(
             homeBakery: { type: Boolean, default: false },
 
             quickCommerce: { type: Boolean, default: true },
+            dudhwala: { type: Boolean, default: true },
         },
         codEnabled: { type: Boolean, default: true },
         onlinePaymentEnabled: { type: Boolean, default: true },

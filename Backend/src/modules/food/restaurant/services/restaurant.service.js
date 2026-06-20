@@ -1129,6 +1129,8 @@ export const uploadRestaurantProfileImage = async (restaurantId, file) => {
         .lean();
     if (!currentRestaurant) throw new ValidationError('Restaurant not found');
 
+    const url = await uploadImageBuffer(file.buffer, 'food/restaurants/profile');
+
     const doc = await FoodRestaurant.findByIdAndUpdate(
         restaurantId,
         {
@@ -1316,6 +1318,10 @@ export const listApprovedRestaurants = async (query = {}) => {
         filter.businessType = 'home_bakery';
     } else {
         filter.businessType = { $ne: 'home_bakery' };
+    }
+
+    if (String(query.customOrdersEnabled) === 'true') {
+        filter.customOrdersEnabled = true;
     }
 
     if (query.city && String(query.city).trim()) {

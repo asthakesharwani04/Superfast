@@ -47,8 +47,9 @@ export default function SubAdminManagement() {
   });
 
   const availableModules = [
-    { id: "food", label: "SuperFast Food" },
-    { id: "quickCommerce", label: "SuperFast Mart" },
+    { id: "food", label: "Chotuu Food" },
+    { id: "quickCommerce", label: "Chotuu Mart" },
+    { id: "dudhwala", label: "Chotuu Dudhwala" },
   ];
 
   const fetchSubAdmins = async () => {

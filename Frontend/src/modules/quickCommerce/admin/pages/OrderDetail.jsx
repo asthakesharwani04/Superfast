@@ -47,6 +47,20 @@ const formatCurrency = (value) =>
         maximumFractionDigits: 2,
     })}`;
 
+const getQuickOrderPayableTotal = (order = {}) => {
+    const provided = Number(order?.amount || order?.totalAmount || order?.payableAmount || order?.total || 0);
+    if (Number.isFinite(provided) && provided > 0) return provided;
+
+    const pricingTotal = Number(order?.pricing?.total || 0);
+    const platformFee = Number(order?.pricing?.platformFee || 0);
+    const computed =
+        order?.pricing?.platformFeeIncluded === true
+            ? pricingTotal
+            : pricingTotal + (Number.isFinite(platformFee) && platformFee > 0 ? platformFee : 0);
+
+    return Number.isFinite(computed) ? Math.max(0, computed) : 0;
+};
+
 const getStatusStyles = (status) => {
     const normalizedStatus = String(status || 'pending').trim().toLowerCase();
     switch (normalizedStatus) {
@@ -174,10 +188,7 @@ export default function OrderDetail() {
             return;
         }
 
-        const payableTotal = Math.max(
-            0,
-            Number(order?.pricing?.total || 0) + Number(order?.pricing?.platformFee || 0),
-        );
+        const payableTotal = getQuickOrderPayableTotal(order);
 
         const itemsHtml = orderItems.map((item) => {
             const quantity = Number(item.quantity || 0);
@@ -216,7 +227,9 @@ export default function OrderDetail() {
                     <h3 style="margin-top:24px;">Summary</h3>
                     <p>Subtotal: ${formatCurrency(order.pricing?.subtotal)}</p>
                     <p>Delivery Fee: ${formatCurrency(order.pricing?.deliveryFee)}</p>
+                    <p>Handling Fee: ${formatCurrency(order.pricing?.handlingFee)}</p>
                     <p>Platform Fee: ${formatCurrency(order.pricing?.platformFee)}</p>
+                    <p>GST: ${formatCurrency(order.pricing?.gstAmount || order.pricing?.gst)}</p>
                     <p><strong>Total: ${formatCurrency(payableTotal)}</strong></p>
                 </body>
             </html>
@@ -344,13 +357,21 @@ export default function OrderDetail() {
                                 <span className="text-sm font-bold text-emerald-600">{formatCurrency(order.pricing?.deliveryFee)}</span>
                             </div>
                             <div className="flex items-center justify-between w-full max-w-[240px]">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Handling Fee</span>
+                                <span className="text-sm font-bold text-slate-700">{formatCurrency(order.pricing?.handlingFee)}</span>
+                            </div>
+                            <div className="flex items-center justify-between w-full max-w-[240px]">
                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Platform Fee</span>
                                 <span className="text-sm font-bold text-slate-700">{formatCurrency(order.pricing?.platformFee)}</span>
+                            </div>
+                            <div className="flex items-center justify-between w-full max-w-[240px]">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">GST</span>
+                                <span className="text-sm font-bold text-slate-700">{formatCurrency(order.pricing?.gstAmount || order.pricing?.gst)}</span>
                             </div>
                             <div className="h-px w-full max-w-[240px] bg-slate-200 my-2" />
                             <div className="flex items-center justify-between w-full max-w-[240px]">
                                 <span className="text-xs font-black text-slate-900 uppercase tracking-tight">Total Payable</span>
-                                <span className="text-2xl font-black text-fuchsia-600">{formatCurrency(Number(order.pricing?.total || 0) + Number(order.pricing?.platformFee || 0))}</span>
+                                <span className="text-2xl font-black text-fuchsia-600">{formatCurrency(getQuickOrderPayableTotal(order))}</span>
                             </div>
                         </div>
                     </Card>

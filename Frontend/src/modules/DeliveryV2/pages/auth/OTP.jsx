@@ -142,10 +142,7 @@ export default function DeliveryOTP() {
       inputRefs.current[index + 1]?.focus()
     }
 
-    // Auto-submit when all 4 digits are entered and we are in OTP step
-    if (!showNameInput && newOtp.every((digit) => digit !== "") && newOtp.length === 4) {
-      handleVerify(newOtp.join(""))
-    }
+    // No auto-submit, user must click Verify & Continue
   }
 
   const handleKeyDown = (index, e) => {
@@ -176,11 +173,7 @@ export default function DeliveryOTP() {
           }
         })
         setOtp(newOtp)
-        if (digits.length === 4) {
-          handleVerify(newOtp.join(""))
-        } else {
-          inputRefs.current[digits.length]?.focus()
-        }
+        inputRefs.current[Math.min(digits.length, 3)]?.focus()
       })
     }
   }
@@ -196,11 +189,7 @@ export default function DeliveryOTP() {
       }
     })
     setOtp(newOtp)
-    if (!showNameInput && digits.length === 4) {
-      handleVerify(newOtp.join(""))
-      return
-    }
-    inputRefs.current[digits.length]?.focus()
+    inputRefs.current[Math.min(digits.length, 3)]?.focus()
   }
 
   const handleVerify = async (otpValue = null) => {
@@ -535,7 +524,7 @@ export default function DeliveryOTP() {
 
   return (
     <div
-      className={`h-[100dvh] bg-[#fafafa] flex flex-col relative font-sans ${keyboardInset > 0 ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden"}`}
+      className="h-[100dvh] bg-[#fafafa] flex flex-col relative font-sans overflow-hidden"
       style={{ paddingBottom: keyboardInset ? `${keyboardInset + 24}px` : undefined }}
     >
       {/* Top Blue Section */}
@@ -543,7 +532,7 @@ export default function DeliveryOTP() {
         <div className="w-full relative overflow-hidden bg-[#005b96] pb-4">
           {/* Back Button */}
           <button
-            onClick={() => navigate("/food/delivery/login")}
+            onClick={() => navigate("/food/delivery/login", { replace: true })}
             className="absolute top-6 left-6 p-2 bg-white/20 hover:bg-white/30 text-white rounded-full transition-all duration-200 z-20 backdrop-blur-md"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -627,7 +616,7 @@ export default function DeliveryOTP() {
         </div>
       </div>
 
-      <div className="flex-1 max-w-[420px] mx-auto w-full px-4 flex flex-col mt-16 md:mt-20 relative z-20 pb-4 h-full">
+      <div className="flex-1 max-w-[420px] mx-auto w-full px-4 flex flex-col mt-16 md:mt-20 relative z-20 pb-4 h-full overflow-y-auto">
         {/* Main Card */}
         <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-gray-100 shrink-0 mb-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
           
