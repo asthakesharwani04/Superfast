@@ -9,30 +9,30 @@ export default function ServiceUnavailable({ type = "zone", moduleName = "", onR
     if (type === "module") {
       return {
         title: "Currently Unavailable",
-        desc: `Oops! ${moduleName} is currently undergoing maintenance. Chotuu will be back in action soon! 🛠️`,
+        desc: `${moduleName} is temporarily unavailable in your area. We're working hard to bring it to you soon.`,
         icon: <Construction className="w-16 h-16 text-orange-400" />
       };
     }
-    
+
     // type === "zone"
     if (moduleName.toLowerCase().includes('food')) {
       return {
-        title: "Coming Soon!",
-        desc: "Chotuu aapke yahan abhi nahi aaya, par jald hi garma-garam khana layega! 🛵🍲",
+        title: "Coming Soon to Your Area!",
+        desc: "We're expanding fast! Superfast Food delivery isn't available at your location yet — but we're on our way. Stay tuned!",
         icon: <MapPinOff className="w-16 h-16 text-red-500" />
       };
     }
     if (moduleName.toLowerCase().includes('quick') || moduleName.toLowerCase().includes('mart')) {
       return {
-        title: "Coming Soon!",
-        desc: "Chotuu aapke yahan abhi nahi aaya, par 15 minute mein magic le aayega! ⚡🛒",
+        title: "Coming Soon to Your Area!",
+        desc: "SuperfastMart isn't live at your location just yet. We're expanding quickly — check back soon for 15-minute deliveries near you!",
         icon: <MapPinOff className="w-16 h-16 text-green-500" />
       };
     }
 
     return {
       title: "Coming Soon!",
-      desc: "Oops! Chotuu aapke yahan abhi nahi aaya hai. Hum tezi se expand kar rahe hain, jald milenge! 🚀",
+      desc: "We're not in your area yet, but we're growing fast. Superfast will be with you very soon!",
       icon: <MapPinOff className="w-16 h-16 text-gray-400" />
     };
   };

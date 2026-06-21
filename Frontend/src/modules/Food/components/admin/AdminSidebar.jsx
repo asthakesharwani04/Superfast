@@ -347,7 +347,7 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
     if (!isQuickAdmin && !isCommonAdmin && !enabledModules.food) return []
 
     return menu
-  }, [isQuickAdmin, isCommonAdmin, isDudhwalaAdmin, enabledModules])
+  }, [isQuickAdmin, isCommonAdmin, enabledModules])
 
   // Ensure expandable keys exist for whichever admin module is active (food/quick)
   useEffect(() => {
