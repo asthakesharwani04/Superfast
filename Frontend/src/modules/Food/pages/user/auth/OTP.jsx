@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, Loader2, AlertCircle, Smartphone } from "lucide-react"
 import AnimatedPage from "@food/components/user/AnimatedPage"
 import { Input } from "@food/components/ui/input"
 import { Button } from "@food/components/ui/button"
 import { authAPI } from "@food/api"
 import { setAuthData as setUserAuthData } from "@food/utils/auth"
+import AuthBrandHeader from "@/modules/auth/components/AuthBrandHeader"
+import { SUPERFAST_BRAND } from "@/modules/auth/constants/brand"
 
 export default function OTP() {
   const navigate = useNavigate()
@@ -405,55 +407,49 @@ export default function OTP() {
   }
 
   return (
-    <AnimatedPage className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] flex items-center justify-center p-4">
-      {/* Background decoration (desktop only) */}
-      <div className="fixed inset-0 z-0 hidden md:block opacity-40">
-        <img src={loginBanner} alt="" className="w-full h-full object-cover blur-sm" />
-        <div className="absolute inset-0 bg-white/60 dark:bg-black/80" />
-      </div>
-
-      <div className="w-full max-w-[450px] bg-white dark:bg-[#1a1a1a] rounded-xl shadow-2xl relative z-10 overflow-hidden border border-gray-100 dark:border-gray-800">
-        {/* Header */}
-        <div className="flex items-center px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+    <AnimatedPage
+      className="min-h-screen flex flex-col"
+      style={{ backgroundColor: SUPERFAST_BRAND.cream }}
+    >
+      <div className="w-full max-w-[420px] mx-auto flex flex-col min-h-screen">
+        <div className="relative">
           <button
-            onClick={() => navigate("/food/user/auth/login")}
-            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+            onClick={() => navigate("/user/auth/login")}
+            className="absolute top-4 left-4 z-20 p-2 rounded-full bg-white/90 text-gray-700 shadow-md hover:bg-white transition-colors"
             aria-label="Go back"
           >
-            <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+            <ArrowLeft className="h-5 w-5" />
           </button>
-          <span className="ml-4 font-bold text-gray-900 dark:text-white">
-            {showNameInput ? "Welcome!" : "OTP Verification"}
-          </span>
+          <AuthBrandHeader compact subtitle="Superfast Food Delivery" />
         </div>
 
-        <div className="p-6 sm:p-8 md:p-10 space-y-6 md:space-y-8">
-          {/* Message */}
-          <div className="text-center space-y-4">
-            {showNameInput && (
-              <div className="flex justify-center">
-                <div className="w-16 h-16 bg-[#EB590E]/10 rounded-full flex items-center justify-center">
-                  <div className="w-10 h-10 bg-[#EB590E] rounded-full flex items-center justify-center shadow-lg shadow-[#EB590E]/30 text-white">
-                    <Smartphone className="h-5 w-5" />
+        <div className="flex-1 px-4 -mt-2 pb-6">
+          <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-[0_10px_40px_-10px_rgba(249,115,22,0.14)] border border-orange-100">
+            <div className="text-center space-y-2 mb-6">
+              {showNameInput && (
+                <div className="flex justify-center mb-2">
+                  <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg"
+                    style={{ background: SUPERFAST_BRAND.gradient }}
+                  >
+                    <Smartphone className="h-6 w-6" />
                   </div>
                 </div>
-              </div>
-            )}
-            <div className="space-y-2">
-              <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white leading-tight">
-                {showNameInput 
-                  ? "Help us know you better" 
+              )}
+              <h2 className="text-xl md:text-2xl font-black text-gray-900 leading-tight">
+                {showNameInput
+                  ? "Help us know you better"
                   : contactType === "email"
                     ? "Verify your email"
                     : "Verify your phone"}
               </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+              <p className="text-sm text-gray-500 max-w-xs mx-auto">
                 {showNameInput
                   ? "We're excited to have you join us! Please tell us your full name to get started."
                   : `We've sent a 4-digit code to ${contactInfo}`}
               </p>
+              <div className="h-1 w-8 mx-auto rounded-full" style={{ background: SUPERFAST_BRAND.gradient }} />
             </div>
-          </div>
 
           {/* OTP Input Fields */}
           {!showNameInput && (
@@ -478,7 +474,7 @@ export default function OTP() {
                         e.target.scrollIntoView({ behavior: "smooth", block: "center" })
                       }, 300)
                     }}
-                    className="w-12 h-12 sm:w-14 sm:h-14 text-center text-xl font-bold border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-[#EB590E] focus:ring-1 focus:ring-[#EB590E] bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white transition-all outline-none"
+                    className="w-12 h-12 sm:w-14 sm:h-14 text-center text-xl font-bold border-2 border-gray-200 rounded-xl focus:border-[#F97316] focus:ring-1 focus:ring-[#F97316] bg-white text-gray-900 transition-all outline-none"
                   />
                 ))}
               </div>
@@ -492,16 +488,17 @@ export default function OTP() {
 
               {/* Resend Section */}
               <div className="text-center">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-gray-500">
                   Didn't get the OTP?{" "}
                   {resendTimer > 0 ? (
-                    <span className="font-medium text-gray-900 dark:text-white">Retry in {resendTimer}s</span>
+                    <span className="font-medium text-gray-900">Retry in {resendTimer}s</span>
                   ) : (
                     <button
                       type="button"
                       onClick={handleResend}
                       disabled={isLoading}
-                      className="text-[#EB590E] hover:text-[#D94F0C] font-bold transition-colors disabled:opacity-50"
+                      className="font-bold transition-colors disabled:opacity-50 hover:underline"
+                      style={{ color: SUPERFAST_BRAND.primary }}
                     >
                       Resend SMS
                     </button>
@@ -529,7 +526,7 @@ export default function OTP() {
                       e.target.scrollIntoView({ behavior: "smooth", block: "center" })
                     }, 300)
                   }}
-                  className={`h-12 md:h-14 text-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white border-gray-300 dark:border-gray-700 rounded-xl focus-visible:ring-1 focus-visible:ring-[#EB590E] focus-visible:border-[#EB590E] ${nameError ? "border-red-500" : ""} transition-all`}
+                  className={`h-12 md:h-14 text-lg bg-white text-gray-900 border-gray-300 rounded-xl focus-visible:ring-1 focus-visible:ring-[#F97316] focus-visible:border-[#F97316] ${nameError ? "border-red-500" : ""} transition-all`}
                 />
                 {nameError && (
                   <p className="text-xs text-red-500 pl-1">
@@ -541,7 +538,8 @@ export default function OTP() {
               <Button
                 onClick={handleSubmitName}
                 disabled={isLoading}
-                className="w-full h-12 md:h-14 bg-[#EB590E] hover:bg-[#D94F0C] text-white font-bold text-lg rounded-xl transition-all hover:shadow-lg active:scale-[0.98]"
+                className="w-full h-12 md:h-14 text-white font-bold text-lg rounded-xl transition-all hover:opacity-95 active:scale-[0.98]"
+                style={{ background: SUPERFAST_BRAND.gradient }}
               >
                 {isLoading ? "Getting things ready..." : "Finish Registration"}
               </Button>
@@ -551,16 +549,10 @@ export default function OTP() {
           {/* Verification Loading Overlay */}
           {isLoading && !showNameInput && (
             <div className="flex justify-center pt-2">
-              <Loader2 className="h-6 w-6 text-[#EB590E] animate-spin" />
+              <Loader2 className="h-6 w-6 animate-spin" style={{ color: SUPERFAST_BRAND.primary }} />
             </div>
           )}
-        </div>
-        
-        {/* Footer info */}
-        <div className="p-6 bg-gray-50 dark:bg-[#1f1f1f] text-center">
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest font-bold">
-                Superfast Food Delivery
-            </p>
+          </div>
         </div>
       </div>
     </AnimatedPage>

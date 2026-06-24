@@ -71,9 +71,11 @@ const quickTheme = (baseColor) => {
 };
 
 const foodTheme = (vegMode) => {
-  const base = vegMode ? "#2f7a46" : "#cc2532";
+  const base = vegMode ? "#2f7a46" : "#F97316";
   return {
-    topBg: `linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 100%), ${base}`,
+    topBg: vegMode
+      ? `linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 100%), ${base}`
+      : `linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.1) 100%), linear-gradient(135deg, #FFC266 0%, #FF9A1A 45%, #F97316 100%)`,
     accent: base,
     text: "#ffffff",
     activeBg: base,

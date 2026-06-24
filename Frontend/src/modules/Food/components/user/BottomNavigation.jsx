@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { Tag, User, Truck, Cake } from "lucide-react"
+import { Tag, User, Truck } from "lucide-react"
 import { useAuth } from "@core/context/AuthContext"
 import DraggableModuleSwitcher from "../../../common/components/DraggableModuleSwitcher"
 
@@ -86,7 +86,7 @@ export default function BottomNavigation() {
         {/* Divider */}
         <div className="h-8 w-px bg-gray-300 dark:bg-gray-700" />
 
-        {/* Bakery Tab */}
+        {/*
         <Link
           to="/food/user/bakery/list"
           className={`flex flex-1 flex-col items-center gap-1.5 px-2 sm:px-3 py-2 transition-all duration-200 relative ${isBakery
@@ -103,8 +103,8 @@ export default function BottomNavigation() {
           )}
         </Link>
 
-        {/* Divider */}
         <div className="h-8 w-px bg-gray-300 dark:bg-gray-700" />
+        */}
 
         {/* Under 250 Tab */}
         <Link
