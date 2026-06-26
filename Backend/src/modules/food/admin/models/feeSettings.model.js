@@ -19,6 +19,9 @@ const feeSettingsSchema = new mongoose.Schema(
         gstRate: { type: Number, min: 0, max: 100 },
         mixedOrderDistanceLimit: { type: Number, min: 0, default: 2 },
         mixedOrderAngleLimit: { type: Number, min: 0, default: 35 },
+        isIncentiveEnabled: { type: Boolean, default: false },
+        incentiveThreshold: { type: Number, min: 0 },
+        incentivePercentage: { type: Number, min: 0 },
         isActive: { type: Boolean, default: true, index: true }
     },
     { collection: 'food_fee_settings', timestamps: true }

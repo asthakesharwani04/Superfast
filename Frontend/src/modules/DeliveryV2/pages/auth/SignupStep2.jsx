@@ -218,6 +218,18 @@ export default function SignupStep2() {
     panPhoto: null,
     drivingLicensePhoto: null
   })
+  const [vehicleType] = useState(() => {
+    const raw = sessionStorage.getItem("deliverySignupDetails")
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw)
+        return parsed.vehicleType || ""
+      } catch {
+        return ""
+      }
+    }
+    return ""
+  })
   const [documents, setDocuments] = useState({
     profilePhoto: null,
     aadharPhoto: null,
@@ -635,7 +647,9 @@ export default function SignupStep2() {
           <DocumentUpload docType="profilePhoto" label="Profile Photo" required={true} />
           <DocumentUpload docType="aadharPhoto" label="Aadhar Card Photo" required={true} />
           <DocumentUpload docType="panPhoto" label="PAN Card Photo" required={true} />
-          <DocumentUpload docType="drivingLicensePhoto" label="Driving License Photo (Optional)" required={false} />
+          {vehicleType !== "bicycle" && (
+            <DocumentUpload docType="drivingLicensePhoto" label="Driving License Photo (Optional)" required={false} />
+          )}
 
           {/* Submit Button */}
           <button

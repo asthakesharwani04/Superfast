@@ -15,6 +15,9 @@ const feeSettingsUpsertSchema = z.object({
     gstRate: z.number().min(0).max(100).nullable().optional(),
     mixedOrderDistanceLimit: z.number().min(0).nullable().optional(),
     mixedOrderAngleLimit: z.number().min(0).nullable().optional(),
+    isIncentiveEnabled: z.boolean().optional(),
+    incentiveThreshold: z.number().min(0).nullable().optional(),
+    incentivePercentage: z.number().min(0).nullable().optional(),
     isActive: z.boolean().optional()
 });
 
@@ -47,6 +50,20 @@ export const validateFeeSettingsUpsertDto = (body) => {
             body?.mixedOrderDistanceLimit === null ? null : body?.mixedOrderDistanceLimit !== undefined ? Number(body.mixedOrderDistanceLimit) : undefined,
         mixedOrderAngleLimit:
             body?.mixedOrderAngleLimit === null ? null : body?.mixedOrderAngleLimit !== undefined ? Number(body.mixedOrderAngleLimit) : undefined,
+        isIncentiveEnabled:
+            body?.isIncentiveEnabled !== undefined ? Boolean(body.isIncentiveEnabled) : undefined,
+        incentiveThreshold:
+            body?.incentiveThreshold === null
+                ? null
+                : body?.incentiveThreshold !== undefined
+                    ? Number(body.incentiveThreshold)
+                    : undefined,
+        incentivePercentage:
+            body?.incentivePercentage === null
+                ? null
+                : body?.incentivePercentage !== undefined
+                    ? Number(body.incentivePercentage)
+                    : undefined,
         isActive: body?.isActive !== undefined ? Boolean(body.isActive) : undefined
     };
 

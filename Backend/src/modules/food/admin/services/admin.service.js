@@ -343,12 +343,15 @@ export async function getRestaurants(query) {
     if (status && ['pending', 'approved', 'rejected'].includes(status)) {
         filter.status = status;
     }
+    if (query.zoneId) {
+        filter.zoneId = query.zoneId;
+    }
     const [restaurants, total] = await Promise.all([
         FoodRestaurant.find(filter)
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
-            .select('restaurantName location area city profileImage coverImages menuImages status ownerName ownerPhone zoneId')
+            .select('restaurantName location area city profileImage coverImages menuImages status ownerName ownerPhone zoneId priority')
             .populate('zoneId', 'name zoneName')
             .lean(),
         FoodRestaurant.countDocuments(filter)
@@ -550,15 +553,15 @@ export async function getDashboardStats(query = {}) {
         ]),
         FoodRestaurant.countDocuments({ ...restaurantMatch, status: 'approved' }),
         FoodRestaurant.countDocuments({ ...restaurantMatch, status: 'pending' }),
-        FoodDeliveryPartner.countDocuments({ status: 'approved' }),
-        FoodDeliveryPartner.countDocuments({ status: 'pending' }),
+        FoodDeliveryPartner.countDocuments({ status: 'approved', requestType: { $ne: 'VEHICLE_CHANGE' } }),
+        FoodDeliveryPartner.countDocuments({ status: 'pending', requestType: { $ne: 'VEHICLE_CHANGE' } }),
         FoodItem.countDocuments({ approvalStatus: 'approved', ...zoneScopedRestaurantMatch }),
         FoodAddon.countDocuments({ approvalStatus: 'approved', isDeleted: { $ne: true }, ...zoneScopedRestaurantMatch }),
         zoneId
             ? FoodOrder.distinct('userId', { ...orderMatch, userId: { $ne: null } }).then((ids) => ids.length)
             : FoodUser.countDocuments({}),
         FoodRestaurant.find({ ...restaurantMatch, status: 'pending' }).sort({ createdAt: -1 }).limit(5).select('restaurantName createdAt').lean(),
-        FoodDeliveryPartner.find({ status: 'pending' }).sort({ createdAt: -1 }).limit(5).select('name createdAt').lean(),
+        FoodDeliveryPartner.find({ status: 'pending', requestType: { $ne: 'VEHICLE_CHANGE' } }).sort({ createdAt: -1 }).limit(5).select('name createdAt').lean(),
         FoodOrder.find({ 
             ...orderMatch,
             orderStatus: { $in: [...PENDING_ORDER_STATUSES, ...PROCESSING_ORDER_STATUSES] },
@@ -1852,6 +1855,11 @@ export async function upsertFeeSettings(body) {
         else if (body.gstRate !== undefined) $set.gstRate = body.gstRate;
         if (body.mixedOrderDistanceLimit !== undefined) $set.mixedOrderDistanceLimit = body.mixedOrderDistanceLimit;
         if (body.mixedOrderAngleLimit !== undefined) $set.mixedOrderAngleLimit = body.mixedOrderAngleLimit;
+        if (body.isIncentiveEnabled !== undefined) $set.isIncentiveEnabled = body.isIncentiveEnabled;
+        if (body.incentiveThreshold === null) $unset.incentiveThreshold = 1;
+        else if (body.incentiveThreshold !== undefined) $set.incentiveThreshold = body.incentiveThreshold;
+        if (body.incentivePercentage === null) $unset.incentivePercentage = 1;
+        else if (body.incentivePercentage !== undefined) $set.incentivePercentage = body.incentivePercentage;
 
         if (body.isActive !== undefined) $set.isActive = body.isActive;
 
@@ -1874,6 +1882,9 @@ export async function upsertFeeSettings(body) {
     if (body.gstRate !== undefined && body.gstRate !== null) payload.gstRate = body.gstRate;
     if (body.mixedOrderDistanceLimit !== undefined) payload.mixedOrderDistanceLimit = body.mixedOrderDistanceLimit;
     if (body.mixedOrderAngleLimit !== undefined) payload.mixedOrderAngleLimit = body.mixedOrderAngleLimit;
+    if (body.isIncentiveEnabled !== undefined) payload.isIncentiveEnabled = body.isIncentiveEnabled;
+    if (body.incentiveThreshold !== undefined && body.incentiveThreshold !== null) payload.incentiveThreshold = body.incentiveThreshold;
+    if (body.incentivePercentage !== undefined && body.incentivePercentage !== null) payload.incentivePercentage = body.incentivePercentage;
 
     const created = await FoodFeeSettings.create(payload);
     return created.toObject();
@@ -2524,6 +2535,10 @@ export async function updateRestaurantById(id, body = {}) {
         } else {
             doc.menuImages = [toStr(getUrl(body.menuImages))].filter(Boolean);
         }
+    }
+
+    if (body.priority !== undefined) {
+        doc.priority = toFinite(body.priority) ?? 0;
     }
 
     await doc.save();
@@ -3682,14 +3697,17 @@ export async function getDeliveryJoinRequests(query) {
         sl: skip + index + 1,
         name: doc.name || '',
         email: doc.email || '',
-        phone: doc.phone || '',
+        phone: doc.phone ? doc.phone.split('-vc')[0] : '',
         city: doc.city || '',
         zone: doc.detectedZoneName,
         vehicleType: doc.vehicleType || '',
         status: doc.status === 'rejected' ? 'denied' : doc.status,
         rejectionReason: doc.rejectionReason || undefined,
         profilePhoto: doc.profilePhoto || null,
-        profileImage: doc.profilePhoto ? { url: doc.profilePhoto } : null
+        profileImage: doc.profilePhoto ? { url: doc.profilePhoto } : null,
+        requestType: doc.requestType || 'JOINING',
+        vehicleName: doc.vehicleName || '',
+        deliveryPartnerId: doc.deliveryPartnerId || null
     }));
 
     return { requests: paginatedRequests, total: totalCount };
@@ -3798,7 +3816,7 @@ export async function updateDeliverySupportTicket(id, body = {}) {
 // ----- Delivery partners (approved list) -----
 export async function getDeliveryPartners(query) {
     const { page = 1, limit = 1000, search } = query;
-    const filter = { status: 'approved' };
+    const filter = { status: 'approved', requestType: { $ne: 'VEHICLE_CHANGE' } };
     if (search && typeof search === 'string' && search.trim()) {
         const term = search.trim();
         filter.$or = [
@@ -3851,10 +3869,14 @@ export async function getDeliveryPartners(query) {
             deliveryId: doc._id ? `DP-${doc._id.toString().slice(-8).toUpperCase()}` : null,
             zone: detectedZone || doc.city || doc.state || doc.address || 'N/A',
             vehicleType: doc.vehicleType || '',
+            vehicleNumber: doc.vehicleNumber || '',
             status: doc.status,
+            availabilityStatus: doc.availabilityStatus || 'offline',
             profilePhoto: doc.profilePhoto || null,
             profileImage: doc.profilePhoto ? { url: doc.profilePhoto } : null,
-            totalOrders: countsMap.get(doc._id.toString()) || 0
+            totalOrders: countsMap.get(doc._id.toString()) || 0,
+            lastLat: doc.lastLat || null,
+            lastLng: doc.lastLng || null
         };
     });
 
@@ -4405,7 +4427,7 @@ export async function checkEarningAddonCompletions(deliveryPartnerId, _force = f
 
     let partnerIds = [];
     if (deliveryPartnerId === 'all') {
-        const partners = await FoodDeliveryPartner.find({ status: 'approved' }).select('_id').lean();
+        const partners = await FoodDeliveryPartner.find({ status: 'approved', requestType: { $ne: 'VEHICLE_CHANGE' } }).select('_id').lean();
         partnerIds = partners.map(p => p._id);
     } else if (deliveryPartnerId && mongoose.Types.ObjectId.isValid(deliveryPartnerId)) {
         partnerIds = [deliveryPartnerId];
@@ -4467,6 +4489,9 @@ export async function getDeliveryPartnerById(id) {
     const deliveryId = partner._id ? `DP-${partner._id.toString().slice(-8).toUpperCase()}` : null;
     return {
         ...partner,
+        phone: partner.phone ? partner.phone.split('-vc')[0] : '',
+        requestType: partner.requestType || 'JOINING',
+        deliveryPartnerId: partner.deliveryPartnerId || null,
         email: partner.email || null,
         deliveryId,
         detectedZone: detectedZone || partner.city || partner.state || 'N/A',
@@ -4575,6 +4600,25 @@ export async function getDeliverymanReviews(query = {}) {
 export async function approveDeliveryPartner(id) {
     const partner = await FoodDeliveryPartner.findById(id);
     if (!partner) return null;
+
+    if (partner.requestType === 'VEHICLE_CHANGE') {
+        partner.status = 'approved';
+        partner.approvedAt = new Date();
+        partner.rejectedAt = undefined;
+        partner.rejectionReason = undefined;
+        await partner.save();
+
+        if (partner.deliveryPartnerId) {
+            const mainPartner = await FoodDeliveryPartner.findById(partner.deliveryPartnerId);
+            if (mainPartner) {
+                mainPartner.vehicleType = partner.vehicleType;
+                mainPartner.vehicleName = partner.vehicleName;
+                await mainPartner.save();
+            }
+        }
+        return partner.toObject();
+    }
+
     partner.status = 'approved';
     partner.approvedAt = new Date();
     partner.rejectedAt = undefined;
@@ -4672,7 +4716,7 @@ export async function rejectDeliveryPartner(id, reason) {
         { new: true }
     ).lean();
 
-    if (updated) {
+    if (updated && updated.requestType !== 'VEHICLE_CHANGE') {
         try {
             const { notifyOwnerSafely } = await import('../../../../core/notifications/firebase.service.js');
             await notifyOwnerSafely(
@@ -4693,6 +4737,18 @@ export async function rejectDeliveryPartner(id, reason) {
         }
     }
     return updated;
+}
+
+export async function updateDeliveryPartnerStatus(id, availabilityStatus) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) return null;
+    const partner = await FoodDeliveryPartner.findById(id);
+    if (!partner) return null;
+    
+    if (availabilityStatus && ['online', 'offline'].includes(availabilityStatus)) {
+        partner.availabilityStatus = availabilityStatus;
+        await partner.save();
+    }
+    return partner.toObject();
 }
 
 // ----- Zones CRUD -----
@@ -4931,7 +4987,7 @@ export async function getDeliveryWallets(query = {}) {
     const page = parseInt(query.page, 10) || 1;
     const skip = (page - 1) * limit;
 
-    const filter = { status: 'approved' };
+    const filter = { status: 'approved', requestType: { $ne: 'VEHICLE_CHANGE' } };
     if (query.search) {
         filter.$or = [
             { name: new RegExp(query.search, 'i') },

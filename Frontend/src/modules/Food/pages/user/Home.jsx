@@ -108,17 +108,17 @@ import { getCachedSettings } from "@/modules/common/utils/businessSettings";
 import { useServiceability } from "@/modules/common/hooks/useServiceability";
 import ServiceUnavailable from "@/modules/common/components/ServiceUnavailable";
 import bakeryIcon from "@food/assets/explore more icons/bakery.png";
-// Extracted Sub-components
-const BannerSection = lazy(() => import("@food/components/user/home/BannerSection"));
-const CategoryRail = lazy(() => import("@food/components/user/home/CategoryRail"));
-const RecommendedSection = lazy(() => import("@food/components/user/home/RecommendedSection"));
-const RestaurantGrid = lazy(() => import("@food/components/user/home/RestaurantGrid"));
-const SortFilterSection = lazy(() => import("@food/components/user/home/SortFilterSection"));
-const ExploreMoreSection = lazy(() => import("@food/components/user/home/ExploreMoreSection"));
+// Extracted Sub-components (Statically imported to make tab switching buttery smooth and instant)
+import BannerSection from "@food/components/user/home/BannerSection";
+import CategoryRail from "@food/components/user/home/CategoryRail";
+import RecommendedSection from "@food/components/user/home/RecommendedSection";
+import RestaurantGrid from "@food/components/user/home/RestaurantGrid";
+import SortFilterSection from "@food/components/user/home/SortFilterSection";
+import ExploreMoreSection from "@food/components/user/home/ExploreMoreSection";
 
-const MiniCart = lazy(() => import("@food/components/user/MiniCart"));
-const OrderTrackingCard = lazy(() => import("@food/components/user/OrderTrackingCard"));
-const QuickCommerceHomePage = lazy(() => import("../../../quickCommerce/user/pages/Home"));
+import MiniCart from "@food/components/user/MiniCart";
+import OrderTrackingCard from "@food/components/user/OrderTrackingCard";
+import QuickCommerceHomePage from "../../../quickCommerce/user/pages/Home";
 
 // Animated placeholder for search - moved outside component to prevent recreation
 const placeholders = [
@@ -165,8 +165,14 @@ export default function Home() {
   const [showAllCategoriesModal, setShowAllCategoriesModal] = useState(false);
   const [availabilityTick, setAvailabilityTick] = useState(Date.now());
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState("food");
-  const [quickThemeColor, setQuickThemeColor] = useState("#cc2532");
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const path = window.location.pathname;
+      if (path.endsWith("/quick") || path.includes("/quick/")) return "quick";
+    }
+    return "food";
+  });
+  const [quickThemeColor, setQuickThemeColor] = useState("#2f7a46");
   const [showToast, setShowToast] = useState(false);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
 

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { 
+import {
   ArrowLeft,
   Loader2,
   Package,
@@ -7,6 +7,8 @@ import {
   Gift,
   Search,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   TrendingUp,
   Receipt
 } from "lucide-react";
@@ -37,6 +39,7 @@ export const PocketDetailsV2 = () => {
   const [bonusTransactions, setBonusTransactions] = useState([]);
   const [summaryData, setSummaryData] = useState({ totalEarning: 0, totalBonus: 0, grandTotal: 0 });
   const [loading, setLoading] = useState(true);
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -122,43 +125,43 @@ export const PocketDetailsV2 = () => {
       <div className="px-5 py-6 space-y-6">
         {/* ─── WEEK SELECTOR (Matching V2 Aesthetics) ─── */}
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-           <WeekSelector 
-             onChange={setWeekRange}
-             weekStartsOn={0}
-           />
+          <WeekSelector
+            onChange={setWeekRange}
+            weekStartsOn={0}
+          />
         </div>
 
         {/* ─── SUMMARY CARD ─── */}
         <div className="bg-black rounded-3xl p-6 shadow-2xl relative overflow-hidden group">
-           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
-           <div className="relative z-10">
-              <div className="flex justify-between items-center mb-6">
-                 <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-1">Total Payout</p>
-                    <h2 className="text-4xl font-black text-white tracking-tighter">{formatCurrency(summary.grandTotal)}</h2>
-                 </div>
-                 <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center border border-white/5 backdrop-blur-md">
-                    <TrendingUp className="w-6 h-6 text-[#ff8100]" />
-                 </div>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
+          <div className="relative z-10">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-1">Total Payout</p>
+                <h2 className="text-4xl font-black text-white tracking-tighter">{formatCurrency(summary.grandTotal)}</h2>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                 <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Trip Earnings</p>
-                    <p className="text-lg font-black text-white">{formatCurrency(summary.totalEarning)}</p>
-                 </div>
-                 <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Weekly Bonus</p>
-                    <p className="text-lg font-black text-green-500">+{formatCurrency(summary.totalBonus)}</p>
-                 </div>
+              <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center border border-white/5 backdrop-blur-md">
+                <TrendingUp className="w-6 h-6 text-[#ff8100]" />
               </div>
-           </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Trip Earnings</p>
+                <p className="text-lg font-black text-white">{formatCurrency(summary.totalEarning)}</p>
+              </div>
+              <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Weekly Bonus</p>
+                <p className="text-lg font-black text-green-500">+{formatCurrency(summary.totalBonus)}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ─── ORDERS LIST ─── */}
         <div className="space-y-4">
           <div className="flex items-center justify-between px-1">
-             <h3 className="text-xs font-black text-gray-950 uppercase tracking-widest">Trips History</h3>
-             <span className="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-[10px] font-bold">{orders.length} Orders</span>
+            <h3 className="text-xs font-black text-gray-950 uppercase tracking-widest">Trips History</h3>
+            <span className="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-[10px] font-bold">{orders.length} Orders</span>
           </div>
 
           {loading ? (
@@ -178,42 +181,83 @@ export const PocketDetailsV2 = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
                     key={oid}
-                    className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between active:scale-[0.98] transition-all"
+                    className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col transition-all cursor-pointer hover:border-gray-200"
+                    onClick={() => setExpandedOrderId(expandedOrderId === oid ? null : oid)}
                   >
-                    <div className="flex items-center gap-4">
-                       <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-900 border border-gray-100">
-                          <Package className="w-6 h-6" />
-                       </div>
-                       <div>
-                          <div className="flex items-center gap-2 mb-0.5">
-                             <h4 className="text-sm font-black text-gray-950 uppercase tracking-tight">#{oid.toString().slice(-6)}</h4>
-                             <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">• {new Date(order.deliveredAt || order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>
-                          </div>
-                          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-tight truncate max-w-[140px]">
-                            {order.restaurantName || order.restaurantId?.name || "Premium Restaurant"}
-                          </p>
-                       </div>
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-4">
+                         <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-900 border border-gray-100">
+                            <Package className="w-6 h-6" />
+                         </div>
+                         <div>
+                            <div className="flex items-center gap-2 mb-0.5">
+                               <h4 className="text-sm font-black text-gray-950 uppercase tracking-tight">#{oid.toString().slice(-6)}</h4>
+                               <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">• {new Date(order.deliveredAt || order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>
+                            </div>
+                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-tight truncate max-w-[140px]">
+                              {order.restaurantName || order.restaurantId?.name || "Premium Restaurant"}
+                            </p>
+                         </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                         <div className="text-right">
+                            <p className="text-base font-black text-gray-950 leading-none mb-1">{formatCurrency(earning + bonus)}</p>
+                            <div className="flex items-center justify-end gap-1.5">
+                               {bonus > 0 && <span className="text-[9px] font-bold text-green-500 uppercase">+{formatCurrency(bonus)} BP</span>}
+                               <div className={`px-2 py-0.5 rounded-md ${order.paymentMethod?.toLowerCase() === 'cod' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-green-50 text-green-600 border border-green-100'} text-[8px] font-black uppercase`}>
+                                  {order.paymentMethod || 'Online'}
+                                </div>
+                            </div>
+                         </div>
+                         <button className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors shrink-0 p-1">
+                            {expandedOrderId === oid ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                         </button>
+                      </div>
                     </div>
-                    <div className="text-right">
-                       <p className="text-base font-black text-gray-950 leading-none mb-1">{formatCurrency(earning + bonus)}</p>
-                       <div className="flex items-center justify-end gap-1.5">
-                          {bonus > 0 && <span className="text-[9px] font-bold text-green-500 uppercase">+{formatCurrency(bonus)} BP</span>}
-                          <div className={`px-2 py-0.5 rounded-md ${order.paymentMethod?.toLowerCase() === 'cod' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-green-50 text-green-600 border border-green-100'} text-[8px] font-black uppercase`}>
-                             {order.paymentMethod || 'Online'}
+
+                    <AnimatePresence>
+                      {expandedOrderId === oid && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden mt-4 pt-4 border-t border-gray-100 text-[11px] text-gray-600 space-y-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-gray-400 uppercase tracking-wider text-[9px]">Base Delivery Fee</span>
+                            <span className="font-bold text-gray-800">{formatCurrency(order.riderEarningBreakdown?.baseEarning ?? earning)}</span>
                           </div>
-                       </div>
-                    </div>
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-gray-400 uppercase tracking-wider text-[9px]">Incentive Payout</span>
+                            <span className={`font-bold ${(order.riderEarningBreakdown?.incentive || 0) > 0 ? 'text-green-500' : 'text-gray-800'}`}>
+                              {formatCurrency(order.riderEarningBreakdown?.incentive || 0)}
+                            </span>
+                          </div>
+                          {bonus > 0 && (
+                            <div className="flex justify-between items-center">
+                              <span className="font-bold text-gray-400 uppercase tracking-wider text-[9px]">Weekly/Addon Bonus</span>
+                              <span className="font-bold text-green-500">+{formatCurrency(bonus)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between items-center pt-2 border-t border-dashed border-gray-100 font-black text-gray-950 text-xs uppercase">
+                            <span>Total Partner Earning</span>
+                            <span>{formatCurrency((order.riderEarningBreakdown?.baseEarning ?? earning) + (order.riderEarningBreakdown?.incentive || 0) + bonus)}</span>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </motion.div>
                 );
               })}
             </div>
           ) : (
             <div className="py-20 text-center bg-white rounded-[2rem] border-2 border-dashed border-gray-100">
-               <div className="w-16 h-16 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto mb-4 text-gray-200">
-                  <Package className="w-8 h-8" />
-               </div>
-               <h3 className="text-lg font-black text-gray-950 uppercase tracking-tight">No Trips Found</h3>
-               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Check another week Range</p>
+              <div className="w-16 h-16 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto mb-4 text-gray-200">
+                <Package className="w-8 h-8" />
+              </div>
+              <h3 className="text-lg font-black text-gray-950 uppercase tracking-tight">No Trips Found</h3>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Check another week Range</p>
             </div>
           )}
         </div>

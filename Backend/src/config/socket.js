@@ -46,6 +46,8 @@ const roomNames = {
  */
 export const initSocket = async (server) => {
     io = new Server(server, {
+        pingTimeout: 60000,
+        pingInterval: 25000,
         cors: {
             origin: config.socketCorsOrigin,
             methods: ['GET', 'POST']

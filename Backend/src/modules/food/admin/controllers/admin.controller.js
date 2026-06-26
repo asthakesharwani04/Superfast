@@ -1181,6 +1181,21 @@ export async function getDeliveryPartners(req, res, next) {
     }
 }
 
+export async function updateDeliveryPartnerStatus(req, res, next) {
+    try {
+        const { id } = req.params;
+        const { availabilityStatus } = req.body;
+        const data = await adminService.updateDeliveryPartnerStatus(id, availabilityStatus);
+        res.status(200).json({
+            success: true,
+            message: 'Delivery partner availability status updated successfully',
+            data
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 export async function getDeliverymanReviews(req, res, next) {
     try {
         const data = await adminService.getDeliverymanReviews(req.query);

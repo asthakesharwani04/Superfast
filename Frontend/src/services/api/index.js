@@ -302,6 +302,10 @@ export const adminAPI = {
       params,
       contextModule: "admin",
     }),
+  updateDeliveryPartnerStatus: (id, availabilityStatus) =>
+    apiClient.patch(`/food/admin/delivery/partners/${String(id)}/status`, { availabilityStatus }, {
+      contextModule: "admin",
+    }),
   getDeliverymanReviews: (params = {}) =>
     apiClient.get("/food/admin/delivery/reviews", {
       params,
@@ -582,6 +586,10 @@ export const adminAPI = {
     }),
   getOrderById: (orderId) =>
     apiClient.get(`/food/admin/orders/${String(orderId)}`, {
+      contextModule: "admin",
+    }),
+  assignOrder: (orderId, deliveryPartnerId) =>
+    apiClient.post(`/food/admin/orders/${String(orderId)}/assign`, { deliveryPartnerId }, {
       contextModule: "admin",
     }),
   processRefund: (orderId, body = {}) =>

@@ -282,7 +282,7 @@ export default function HomeHeader({
 
   return (
     <motion.div
-      className={`relative transition-all duration-400 ${isFood
+      className={`relative transition-[min-height] duration-400 ${isFood
           ? "min-h-[280px] overflow-hidden"
           : "min-h-[120px] overflow-visible"
         }`}
@@ -304,13 +304,13 @@ export default function HomeHeader({
             }`}
           />
           <div
-            className="absolute inset-0 transition-colors duration-700"
+            className="absolute inset-0"
             style={{
               background: `linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.0) 100%)`
             }}
           />
           <div
-            className="absolute inset-0 transition-colors duration-700 opacity-30"
+            className="absolute inset-0 opacity-30"
             style={{
               background: `radial-gradient(circle at 20% 30%, ${withAlpha(theme.accent, 0.4)}, transparent 70%)`
             }}

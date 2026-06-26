@@ -658,7 +658,7 @@ export const ProfileDetailsV2 = () => {
              {[
                { icon: FileText, label: "Aadhar Card", doc: profile?.documents?.aadhar },
                { icon: FileText, label: "PAN Card", doc: profile?.documents?.pan },
-               { icon: Truck, label: "Driving License", doc: profile?.documents?.drivingLicense, number: getDrivingLicenseNumber() }
+               ...(vehicleType !== "bicycle" ? [{ icon: Truck, label: "Driving License", doc: profile?.documents?.drivingLicense, number: getDrivingLicenseNumber() }] : [])
              ].map((item, i) => (
                <div key={i} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -783,38 +783,44 @@ export const ProfileDetailsV2 = () => {
                     </div>
                 </div>
 
-                <div className="h-px bg-gray-200 w-full" />
+                {vehicleInput.type !== "bicycle" && (
+                  <>
+                    <div className="h-px bg-gray-200 w-full" />
 
-                {/* Number Input */}
-                <div className="flex items-center gap-4 w-full">
-                    <div className="w-8 h-8 flex items-center justify-center"><QrCode className="w-4 h-4 text-orange-500/50" /></div>
-                    <div className="flex-1">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Vehicle Number</p>
-                        <input 
-                            type="text" 
-                            value={vehicleInput.number} 
-                            onChange={(e) => setVehicleInput({...vehicleInput, number: e.target.value.toUpperCase()})} 
-                            placeholder="E.g. UP 80 AB 1234"
-                            className="w-full bg-transparent text-lg font-black text-black outline-none border-b-2 border-transparent focus:border-orange-500 placeholder:text-gray-200"
-                        />
+                    {/* Number Input */}
+                    <div className="flex items-center gap-4 w-full">
+                        <div className="w-8 h-8 flex items-center justify-center"><QrCode className="w-4 h-4 text-orange-500/50" /></div>
+                        <div className="flex-1">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Vehicle Number</p>
+                            <input 
+                                type="text" 
+                                value={vehicleInput.number} 
+                                onChange={(e) => setVehicleInput({...vehicleInput, number: e.target.value.toUpperCase()})} 
+                                placeholder="E.g. UP 80 AB 1234"
+                                className="w-full bg-transparent text-lg font-black text-black outline-none border-b-2 border-transparent focus:border-orange-500 placeholder:text-gray-200"
+                            />
+                        </div>
                     </div>
-                </div>
+                  </>
+                )}
             </div>
 
             <button 
                onClick={async () => {
-                 const num = vehicleInput.number.trim();
-                 const brand = vehicleInput.brand.trim();
                  const type = vehicleInput.type;
+                 const num = type === "bicycle" ? "" : vehicleInput.number.trim();
+                 const brand = vehicleInput.brand.trim();
 
-                 if (!num) return toast.error("Vehicle number is required");
-                 if (!brand) return toast.error("Vehicle brand is required");
+                 if (type !== "bicycle") {
+                   if (!num) return toast.error("Vehicle number is required");
+                   if (!brand) return toast.error("Vehicle brand is required");
 
-                 // Improved validation for Indian vehicle numbers
-                 // Accept common formats like MH12AB1234 or MH12A1234
-                 const numRegex = /^[A-Z]{2}[0-9]{1,2}[A-Z]{0,2}[0-9]{4}$/i;
-                 if (!numRegex.test(num.replace(/\s+/g, ""))) {
-                    return toast.error("Please enter a valid vehicle number (e.g. MH12AB1234)");
+                   // Improved validation for Indian vehicle numbers
+                   // Accept common formats like MH12AB1234 or MH12A1234
+                   const numRegex = /^[A-Z]{2}[0-9]{1,2}[A-Z]{0,2}[0-9]{4}$/i;
+                   if (!numRegex.test(num.replace(/\s+/g, ""))) {
+                      return toast.error("Please enter a valid vehicle number (e.g. MH12AB1234)");
+                   }
                  }
 
                  try {
@@ -829,7 +835,7 @@ export const ProfileDetailsV2 = () => {
                      setVehicleBrand(brand)
                      setVehicleType(type)
                      setShowVehiclePopup(false)
-                     toast.success("Flight details updated!")
+                     toast.success("Vehicle change request has been submitted to the admin.")
                      await refreshProfile()
                    } catch (e) { toast.error("Cloud storage sync failed") }
                }}

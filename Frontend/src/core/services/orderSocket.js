@@ -22,7 +22,7 @@ export function getOrderSocket(getToken) {
     return null;
   }
 
-  if (!socket || !socket.connected) {
+  if (!socket) {
     console.log('[orderSocket] Creating new Socket.IO connection to:', socketBaseUrl());
     socket = io(socketBaseUrl(), {
       auth: { token },
@@ -44,6 +44,10 @@ export function getOrderSocket(getToken) {
       console.error('[orderSocket] Socket connection error:', error);
     });
   } else {
+    // If socket exists but is disconnected, trigger a manual reconnect
+    if (!socket.connected) {
+      socket.connect();
+    }
     console.log('[orderSocket] Reusing existing socket connection, ID:', socket.id);
   }
   

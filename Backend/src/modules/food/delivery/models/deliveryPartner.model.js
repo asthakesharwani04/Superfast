@@ -79,6 +79,16 @@ const deliveryPartnerSchema = new mongoose.Schema(
             enum: ['pending', 'approved', 'rejected'],
             default: 'pending'
         },
+        requestType: {
+            type: String,
+            enum: ['JOINING', 'VEHICLE_CHANGE'],
+            default: 'JOINING'
+        },
+        deliveryPartnerId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'FoodDeliveryPartner',
+            default: null
+        },
         rejectionReason: { type: String },
         rejectedAt: { type: Date },
         approvedAt: { type: Date },

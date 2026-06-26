@@ -16,6 +16,9 @@ export default function FeeSettings() {
     freeDeliveryThreshold: "",
     platformFee: "",
     gstRate: "",
+    isIncentiveEnabled: false,
+    incentiveThreshold: "",
+    incentivePercentage: "",
   })
   const [loadingFeeSettings, setLoadingFeeSettings] = useState(false)
   const [savingFeeSettings, setSavingFeeSettings] = useState(false)
@@ -34,6 +37,9 @@ export default function FeeSettings() {
           freeDeliveryThreshold: response.data.data.feeSettings.freeDeliveryThreshold ?? "",
           platformFee: response.data.data.feeSettings.platformFee ?? "",
           gstRate: response.data.data.feeSettings.gstRate ?? "",
+          isIncentiveEnabled: response.data.data.feeSettings.isIncentiveEnabled ?? false,
+          incentiveThreshold: response.data.data.feeSettings.incentiveThreshold ?? "",
+          incentivePercentage: response.data.data.feeSettings.incentivePercentage ?? "",
         })
       } else if (response.data.success && response.data.data.feeSettings === null) {
         // Not configured yet - keep empty fields (no defaults).
@@ -43,6 +49,9 @@ export default function FeeSettings() {
           freeDeliveryThreshold: "",
           platformFee: "",
           gstRate: "",
+          isIncentiveEnabled: false,
+          incentiveThreshold: "",
+          incentivePercentage: "",
         })
       }
     } catch (error) {
@@ -68,6 +77,9 @@ export default function FeeSettings() {
         freeDeliveryThreshold: feeSettings.freeDeliveryThreshold === "" ? undefined : Number(feeSettings.freeDeliveryThreshold),
         platformFee: feeSettings.platformFee === "" ? undefined : Number(feeSettings.platformFee),
         gstRate: feeSettings.gstRate === "" ? undefined : Number(feeSettings.gstRate),
+        isIncentiveEnabled: feeSettings.isIncentiveEnabled,
+        incentiveThreshold: feeSettings.incentiveThreshold === "" ? undefined : Number(feeSettings.incentiveThreshold),
+        incentivePercentage: feeSettings.incentivePercentage === "" ? undefined : Number(feeSettings.incentivePercentage),
         isActive: true,
       })
 
@@ -82,6 +94,9 @@ export default function FeeSettings() {
             freeDeliveryThreshold: saved.freeDeliveryThreshold ?? "",
             platformFee: saved.platformFee ?? "",
             gstRate: saved.gstRate ?? "",
+            isIncentiveEnabled: saved.isIncentiveEnabled ?? false,
+            incentiveThreshold: saved.incentiveThreshold ?? "",
+            incentivePercentage: saved.incentivePercentage ?? "",
           })
         }
       } else {
@@ -513,6 +528,74 @@ export default function FeeSettings() {
                   <p className="text-xs text-slate-500">
                     GST percentage applied on order subtotal
                   </p>
+                </div>
+              </div>
+
+              {/* Delivery Partner Incentive Section */}
+              <div className="border border-green-200 bg-green-50/10 rounded-xl p-6 mt-8">
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">Delivery Partner Incentive</h3>
+                    <p className="text-sm text-slate-500 mt-1">
+                      If subtotal reaches the threshold, the rider gets an extra payout based on the order subtotal.
+                    </p>
+                  </div>
+                  <div>
+                    <label className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border transition-all cursor-pointer select-none text-sm font-medium ${
+                      feeSettings.isIncentiveEnabled 
+                        ? 'border-green-500 bg-green-50 text-green-700' 
+                        : 'border-slate-300 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        checked={feeSettings.isIncentiveEnabled}
+                        onChange={(e) => setFeeSettings({ ...feeSettings, isIncentiveEnabled: e.target.checked })}
+                        className="w-4 h-4 text-green-600 rounded border-slate-300 focus:ring-green-500 accent-green-600 cursor-pointer"
+                      />
+                      <span>Enable Incentive</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-slate-700">
+                      Order Amount Threshold (₹)
+                    </label>
+                    <input
+                      type="number"
+                      value={feeSettings.incentiveThreshold}
+                      onChange={(e) => setFeeSettings({ ...feeSettings, incentiveThreshold: e.target.value })}
+                      min="0"
+                      step="1"
+                      disabled={!feeSettings.isIncentiveEnabled}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all disabled:bg-slate-50 disabled:text-slate-400"
+                      placeholder="e.g. 500"
+                    />
+                    <p className="text-xs text-slate-500">
+                      Minimum order subtotal value to qualify for incentive
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-slate-700">
+                      Incentive Percentage (%)
+                    </label>
+                    <input
+                      type="number"
+                      value={feeSettings.incentivePercentage}
+                      onChange={(e) => setFeeSettings({ ...feeSettings, incentivePercentage: e.target.value })}
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      disabled={!feeSettings.isIncentiveEnabled}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all disabled:bg-slate-50 disabled:text-slate-400"
+                      placeholder="e.g. 10"
+                    />
+                    <p className="text-xs text-slate-500">
+                      Percentage of order subtotal given to the rider
+                    </p>
+                  </div>
                 </div>
               </div>
           </>

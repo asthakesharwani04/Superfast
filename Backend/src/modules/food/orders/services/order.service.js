@@ -2082,17 +2082,30 @@ export async function createOrder(userId, dto) {
     );
   }
 
-  const riderEarning =
+  const baseRiderEarning =
     orderType === "food" || orderType === "quick" || orderType === "mixed"
       ? await foodTransactionService.getRiderEarning(distanceKm)
       : 0;
 
-  const activeFeeSettings =
-    orderType === "mixed" && dispatchStrategy === "express_split"
-      ? await FoodFeeSettings.findOne({ isActive: true })
-          .sort({ createdAt: -1 })
-          .lean()
-      : null;
+  const activeFeeSettings = await FoodFeeSettings.findOne({ isActive: true })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  let incentiveAmount = 0;
+  if (
+    activeFeeSettings &&
+    activeFeeSettings.isIncentiveEnabled &&
+    normalizedPricing.subtotal >= (activeFeeSettings.incentiveThreshold || 0)
+  ) {
+    incentiveAmount = Number(
+      (
+        normalizedPricing.subtotal *
+        ((activeFeeSettings.incentivePercentage || 0) / 100)
+      ).toFixed(2)
+    );
+  }
+
+  const riderEarning = baseRiderEarning + incentiveAmount;
   const quickDeliveryFeeBase =
     orderType === "mixed" && dispatchStrategy === "express_split"
       ? Number(activeFeeSettings?.deliveryFee || 25)
@@ -2210,6 +2223,10 @@ export async function createOrder(userId, dto) {
           : "quick",
     scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
     riderEarning,
+    riderEarningBreakdown: {
+      baseEarning: baseRiderEarning,
+      incentive: incentiveAmount
+    },
     platformProfit,
   });
 
@@ -4414,6 +4431,7 @@ export async function listOrdersAdmin(query) {
   const restaurantIdRaw = typeof query.restaurantId === "string" ? query.restaurantId.trim() : "";
   const zoneIdRaw = typeof query.zoneId === "string" ? query.zoneId.trim() : "";
   const userIdRaw = typeof query.userId === "string" ? query.userId.trim() : "";
+  const deliveryPartnerIdRaw = typeof query.deliveryPartnerId === "string" ? query.deliveryPartnerId.trim() : "";
   const startDateRaw = typeof query.startDate === "string" ? query.startDate.trim() : "";
   const endDateRaw = typeof query.endDate === "string" ? query.endDate.trim() : "";
   const search = typeof query.search === "string" ? query.search.trim() : "";
@@ -4478,6 +4496,16 @@ export async function listOrdersAdmin(query) {
   if (userIdRaw && mongoose.Types.ObjectId.isValid(userIdRaw)) {
     filter.userId = new mongoose.Types.ObjectId(userIdRaw);
   }
+  if (deliveryPartnerIdRaw && mongoose.Types.ObjectId.isValid(deliveryPartnerIdRaw)) {
+    filter.$and = [
+      {
+        $or: [
+          { "dispatch.deliveryPartnerId": new mongoose.Types.ObjectId(deliveryPartnerIdRaw) },
+          { "dispatchPlan.legs.deliveryPartnerId": new mongoose.Types.ObjectId(deliveryPartnerIdRaw) }
+        ]
+      }
+    ];
+  }
 
   // Date filters
   if (startDateRaw || endDateRaw) {
@@ -4522,10 +4550,19 @@ export async function listOrdersAdmin(query) {
     const originalFilter = { ...filter };
     delete filter.$or; // We'll reconstruct it
 
-    filter.$and = [
-      { $or: originalFilter.$or }, // Visibility filters
-      { $or: searchConditions }   // Search conditions
-    ];
+    const searchOr = { $or: searchConditions };
+    if (originalFilter.$and) {
+      filter.$and = [
+        ...originalFilter.$and,
+        { $or: originalFilter.$or },
+        searchOr
+      ];
+    } else {
+      filter.$and = [
+        { $or: originalFilter.$or },
+        searchOr
+      ];
+    }
     
     // Copy other specific filters into $and if needed, but since they are already in `filter` object, 
     // we should be careful. Actually, it's better to just keep them as they are and let Mongo handle it.
@@ -4552,7 +4589,9 @@ export async function assignDeliveryPartnerAdmin(
   deliveryPartnerId,
   adminId,
 ) {
-  const order = await FoodOrder.findById(orderId);
+  const identity = buildOrderIdentityFilter(orderId);
+  if (!identity) throw new ValidationError("Order id required");
+  const order = await FoodOrder.findOne(identity);
   if (!order) throw new NotFoundError("Order not found");
   if (order.dispatch.status === "accepted")
     throw new ValidationError("Order already accepted by partner");

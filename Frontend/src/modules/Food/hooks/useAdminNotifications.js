@@ -313,7 +313,7 @@ export default function useAdminNotifications(options = {}) {
 
     const socket = io(socketOrigin, {
       path: "/socket.io/",
-      transports: ["polling"],
+      transports: ["websocket", "polling"],
       auth: { token },
     });
 

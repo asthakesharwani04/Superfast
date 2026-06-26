@@ -284,6 +284,11 @@ const restaurantSchema = new mongoose.Schema(
       updatedZone: { type: String },
       reVerificationReason: { type: String, trim: true }
     },
+    priority: {
+      type: Number,
+      default: 0,
+      index: true
+    },
   },
   {
     collection: 'food_restaurants',

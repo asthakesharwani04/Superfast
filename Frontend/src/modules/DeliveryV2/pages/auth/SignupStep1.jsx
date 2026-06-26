@@ -159,17 +159,27 @@ export default function SignupStep1() {
       updatedValue = sanitizeEmailValue(value)
     }
 
-    setFormData(prev => ({
-      ...prev,
-      [name]: updatedValue
-    }))
-    // Clear error for this field
-    if (errors[name]) {
-      setErrors(prev => ({
+    setFormData(prev => {
+      const nextData = {
         ...prev,
-        [name]: ""
-      }))
-    }
+        [name]: updatedValue
+      };
+      if (name === "vehicleType" && updatedValue === "bicycle") {
+        nextData.vehicleNumber = "";
+        nextData.drivingLicenseNumber = "";
+      }
+      return nextData;
+    });
+
+    // Clear error for this field and also for vehicle fields if bicycle
+    setErrors(prev => {
+      const nextErrors = { ...prev, [name]: "" };
+      if (name === "vehicleType" && updatedValue === "bicycle") {
+        nextErrors.vehicleNumber = "";
+        nextErrors.drivingLicenseNumber = "";
+      }
+      return nextErrors;
+    });
   }
 
   const validate = () => {
@@ -201,14 +211,16 @@ export default function SignupStep1() {
       newErrors.state = "State can contain letters only"
     }
 
-    if (!formData.vehicleNumber.trim()) {
-      newErrors.vehicleNumber = "Vehicle number is required"
-    } else if (!/^[A-Z]{2}[0-9]{1,2}[A-Z]{1,2}[0-9]{4}$/.test(formData.vehicleNumber)) {
-      newErrors.vehicleNumber = "Invalid Indian vehicle number format (e.g., MH12AB1234)"
-    }
+    if (formData.vehicleType !== "bicycle") {
+      if (!formData.vehicleNumber.trim()) {
+        newErrors.vehicleNumber = "Vehicle number is required"
+      } else if (!/^[A-Z]{2}[0-9]{1,2}[A-Z]{1,2}[0-9]{4}$/.test(formData.vehicleNumber)) {
+        newErrors.vehicleNumber = "Invalid Indian vehicle number format (e.g., MH12AB1234)"
+      }
 
-    if (formData.drivingLicenseNumber.trim() && !/^[A-Z]{2}[0-9]{2}[0-9]{4}[0-9]{7}$/.test(formData.drivingLicenseNumber)) {
-      newErrors.drivingLicenseNumber = "Invalid DL format (e.g., MH1220110012345)"
+      if (formData.drivingLicenseNumber.trim() && !/^[A-Z]{2}[0-9]{2}[0-9]{4}[0-9]{7}$/.test(formData.drivingLicenseNumber)) {
+        newErrors.drivingLicenseNumber = "Invalid DL format (e.g., MH1220110012345)"
+      }
     }
 
     if (!formData.panNumber.trim()) {
@@ -250,8 +262,8 @@ export default function SignupStep1() {
         state: formData.state.trim(),
         vehicleType: formData.vehicleType || "bike",
         vehicleName: formData.vehicleName?.trim() || "",
-        vehicleNumber: formData.vehicleNumber.trim(),
-        drivingLicenseNumber: formData.drivingLicenseNumber.trim().toUpperCase(),
+        vehicleNumber: formData.vehicleType === "bicycle" ? "" : formData.vehicleNumber.trim(),
+        drivingLicenseNumber: formData.vehicleType === "bicycle" ? "" : formData.drivingLicenseNumber.trim().toUpperCase(),
         panNumber: formData.panNumber.trim().toUpperCase(),
         aadharNumber: formData.aadharNumber.replace(/\s/g, "")
       }
@@ -413,41 +425,45 @@ export default function SignupStep1() {
             />
           </div>
 
-          {/* Vehicle Number */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Vehicle Number <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="vehicleNumber"
-              value={formData.vehicleNumber}
-              onChange={handleChange}
-              maxLength={10}
-              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.vehicleNumber ? "border-red-500" : "border-gray-300"
-                }`}
-              placeholder="e.g., MH12AB1234"
-            />
-            {errors.vehicleNumber && <p className="text-red-500 text-sm mt-1">{errors.vehicleNumber}</p>}
-          </div>
+          {formData.vehicleType !== "bicycle" && (
+            <>
+              {/* Vehicle Number */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Vehicle Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="vehicleNumber"
+                  value={formData.vehicleNumber}
+                  onChange={handleChange}
+                  maxLength={10}
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.vehicleNumber ? "border-red-500" : "border-gray-300"
+                    }`}
+                  placeholder="e.g., MH12AB1234"
+                />
+                {errors.vehicleNumber && <p className="text-red-500 text-sm mt-1">{errors.vehicleNumber}</p>}
+              </div>
 
-          {/* Driving License Number */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Driving License Number (Optional)
-            </label>
-            <input
-              type="text"
-              name="drivingLicenseNumber"
-              value={formData.drivingLicenseNumber}
-              onChange={handleChange}
-              maxLength={16}
-              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 uppercase ${errors.drivingLicenseNumber ? "border-red-500" : "border-gray-300"
-                }`}
-              placeholder="e.g., MH1220110012345"
-            />
-            {errors.drivingLicenseNumber && <p className="text-red-500 text-sm mt-1">{errors.drivingLicenseNumber}</p>}
-          </div>
+              {/* Driving License Number */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Driving License Number (Optional)
+                </label>
+                <input
+                  type="text"
+                  name="drivingLicenseNumber"
+                  value={formData.drivingLicenseNumber}
+                  onChange={handleChange}
+                  maxLength={16}
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 uppercase ${errors.drivingLicenseNumber ? "border-red-500" : "border-gray-300"
+                    }`}
+                  placeholder="e.g., MH1220110012345"
+                />
+                {errors.drivingLicenseNumber && <p className="text-red-500 text-sm mt-1">{errors.drivingLicenseNumber}</p>}
+              </div>
+            </>
+          )}
 
           {/* PAN Number */}
           <div>

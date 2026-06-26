@@ -10,10 +10,10 @@ import { getDeliveryCashLimitSettings } from '../../admin/services/admin.service
 import { QuickReturnRequest } from '../../../quick-commerce/models/ReturnRequest.model.js';
 
 export const registerDeliveryPartner = async (payload, files) => {
-    const { 
-        name, phone, email, countryCode, address, city, state, 
+    const {
+        name, phone, email, countryCode, address, city, state,
         vehicleType, vehicleName, vehicleNumber, drivingLicenseNumber, panNumber, aadharNumber,
-        fcmToken, platform 
+        fcmToken, platform
     } = payload;
     const refRaw = typeof payload?.ref === 'string' ? String(payload.ref).trim() : '';
 
@@ -85,7 +85,7 @@ export const registerDeliveryPartner = async (payload, files) => {
         }
 
         if (!referrer) {
-            referrer = await FoodDeliveryPartner.findOne({ 
+            referrer = await FoodDeliveryPartner.findOne({
                 $or: [
                     { referralCode: refRaw },
                     { phone: refRaw }
@@ -203,10 +203,38 @@ export const updateDeliveryPartnerDetails = async (userId, payload) => {
 
     const vehicle = payload?.vehicle;
     if (vehicle && typeof vehicle === 'object') {
-        if (vehicle.number !== undefined) partner.vehicleNumber = String(vehicle.number || '').trim();
-        if (vehicle.type !== undefined) partner.vehicleType = String(vehicle.type || '').trim();
-        if (vehicle.brand !== undefined) partner.vehicleName = String(vehicle.brand || '').trim();
-        if (vehicle.model !== undefined) partner.vehicleName = String(vehicle.model || '').trim();
+        const reqVehicleType = vehicle.type !== undefined ? String(vehicle.type || '').trim() : partner.vehicleType;
+        const reqVehicleBrand = vehicle.brand !== undefined ? String(vehicle.brand || '').trim() : '';
+        const reqVehicleModel = vehicle.model !== undefined ? String(vehicle.model || '').trim() : '';
+        const reqVehicleName = reqVehicleBrand || reqVehicleModel || partner.vehicleName;
+
+        const requestData = {
+            name: partner.name,
+            phone: partner.phone + '-vc-' + new mongoose.Types.ObjectId(),
+            email: partner.email,
+            vehicleType: reqVehicleType,
+            vehicleName: reqVehicleName,
+            requestType: 'VEHICLE_CHANGE',
+            status: 'pending',
+            deliveryPartnerId: partner._id,
+            city: partner.city,
+            state: partner.state,
+            address: partner.address
+        };
+
+        const existingRequest = await FoodDeliveryPartner.findOne({
+            deliveryPartnerId: partner._id,
+            requestType: 'VEHICLE_CHANGE',
+            status: 'pending'
+        });
+
+        if (existingRequest) {
+            existingRequest.vehicleType = requestData.vehicleType;
+            existingRequest.vehicleName = requestData.vehicleName;
+            await existingRequest.save();
+        } else {
+            await FoodDeliveryPartner.create(requestData);
+        }
     }
 
     if (payload?.profilePhoto !== undefined) {
@@ -344,7 +372,7 @@ export const updateDeliveryAvailability = async (userId, payload) => {
     let validStatus = 'offline';
     if (status === 'online' || status === true) validStatus = 'online';
     else if (status === 'offline' || status === false) validStatus = 'offline';
-    
+
     partner.availabilityStatus = validStatus;
     if (typeof latitude === 'number' && typeof longitude === 'number') {
         partner.lastLocation = {

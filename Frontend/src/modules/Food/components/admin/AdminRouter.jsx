@@ -6,6 +6,7 @@ import Loader from "@food/components/Loader";
 
 const AdminHome = lazy(() => import("@food/pages/admin/AdminHome"));
 const PointOfSale = lazy(() => import("@food/pages/admin/PointOfSale"));
+const StatusMonitor = lazy(() => import("@food/pages/admin/StatusMonitor"));
 const AdminProfile = lazy(() => import("@/modules/common/admin/pages/AdminProfile"));
 const AdminSettings = lazy(() => import("@food/pages/admin/AdminSettings"));
 const NewRefundRequests = lazy(() => import("@food/pages/admin/refunds/NewRefundRequests"));
@@ -183,6 +184,7 @@ export default function AdminRouter() {
           <Route path="food/*">
             <Route index element={<AdminHome />} />
             <Route path="point-of-sale" element={<PointOfSale />} />
+            <Route path="status-monitor" element={<StatusMonitor />} />
             <Route path="profile" element={<AdminProfile />} />
             <Route path="settings" element={<AdminSettings />} />
             
