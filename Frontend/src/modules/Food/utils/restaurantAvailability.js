@@ -165,10 +165,103 @@ export const getRestaurantAvailabilityStatus = (restaurant, now = new Date(), op
 
   const dayName = DAY_NAMES[now.getDay()]
   const todayTiming = getTodayTiming(restaurant, dayName)
+  const nowMinutes = now.getHours() * 60 + now.getMinutes()
 
-  // Legacy openDays can get stale; enforce only when no explicit outlet timing exists for today.
+  // Helper to evaluate if the given timing object is currently active
+  const checkTimingOpen = (timingDoc, isPreviousDay = false) => {
+    if (!timingDoc || timingDoc.isOpen === false) return null
+
+    const opt = timingDoc.openingTime || null
+    const clt = timingDoc.closingTime || null
+    const opMin = parseTimeToMinutes(opt)
+    const clMin = parseTimeToMinutes(clt)
+
+    if (opMin === null || clMin === null) return null
+
+    const isOvernight = clMin < opMin
+
+    // If we're checking the previous day, we only care if it spans past midnight
+    if (isPreviousDay && !isOvernight) return null
+
+    let isWithin = false
+    if (isOvernight) {
+      if (isPreviousDay) {
+        // Since we are checking yesterday's slot today, we are in the next day (00:00 to clMin)
+        isWithin = nowMinutes <= clMin
+      } else {
+        isWithin = nowMinutes >= opMin || nowMinutes <= clMin
+      }
+    } else {
+      isWithin = nowMinutes >= opMin && nowMinutes <= clMin
+    }
+
+    if (isWithin) {
+      const minutesUntilClose = isOvernight
+        ? (isPreviousDay
+            ? clMin - nowMinutes
+            : (nowMinutes <= clMin ? clMin - nowMinutes : (24 * 60 - nowMinutes) + clMin))
+        : clMin - nowMinutes
+
+      return {
+        openingTime: opt,
+        closingTime: clt,
+        minutesUntilClose,
+        reason: isAcceptingOrders ? "open" : "open-by-timings"
+      }
+    }
+
+    return null
+  }
+
+  let activeTiming = null
+
+  // 1. Check if today's timing is open
+  if (todayTiming) {
+    activeTiming = checkTimingOpen(todayTiming, false)
+  }
+
+  // 2. If not open by today's timing, check if yesterday's timing was overnight and is still open
+  if (!activeTiming) {
+    const prevDayName = DAY_NAMES[(now.getDay() + 6) % 7]
+    const prevTiming = getTodayTiming(restaurant, prevDayName)
+    activeTiming = checkTimingOpen(prevTiming, true)
+  }
+
+  // If we found a match from specific outlet timings:
+  if (activeTiming) {
+    return {
+      isOpen: true,
+      isActive,
+      isAcceptingOrders,
+      isWithinTimings: true,
+      openingTime: activeTiming.openingTime,
+      closingTime: activeTiming.closingTime,
+      minutesUntilClose: activeTiming.minutesUntilClose,
+      closingCountdownLabel: formatClosingCountdown(activeTiming.minutesUntilClose, activeTiming.closingTime),
+      reason: activeTiming.reason,
+    }
+  }
+
+  // If today has explicit timing but we are not within it (and not in yesterday's overflow), then it's closed
+  if (todayTiming) {
+    const opt = todayTiming.openingTime
+    const clt = todayTiming.closingTime
+    return {
+      isOpen: false,
+      isActive,
+      isAcceptingOrders,
+      isWithinTimings: false,
+      openingTime: opt,
+      closingTime: clt,
+      minutesUntilClose: null,
+      closingCountdownLabel: null,
+      reason: todayTiming.isOpen === false ? "day-closed" : "outside-hours",
+    }
+  }
+
+  // 3. Fallback: No specific timing configured for today (Legacy openDays / general fields)
   const openDays = Array.isArray(restaurant.openDays) ? restaurant.openDays : []
-  if (!todayTiming && openDays.length > 0) {
+  if (openDays.length > 0) {
     const normalizedOpenDays = new Set(openDays.map((day) => normalizeDay(day)).filter(Boolean))
     if (normalizedOpenDays.size > 0 && !normalizedOpenDays.has(dayName)) {
       return {
@@ -181,41 +274,39 @@ export const getRestaurantAvailabilityStatus = (restaurant, now = new Date(), op
     }
   }
 
-  if (todayTiming?.isOpen === false) {
-    return {
-      isOpen: false,
-      isActive,
-      isAcceptingOrders,
-      isWithinTimings: false,
-      reason: "day-closed",
-    }
-  }
-
   const openingTime =
-    todayTiming?.openingTime ||
     restaurant?.deliveryTimings?.openingTime ||
     restaurant?.openingTime ||
     null
   const closingTime =
-    todayTiming?.closingTime ||
     restaurant?.deliveryTimings?.closingTime ||
     restaurant?.closingTime ||
     null
 
   const openingMinutes = parseTimeToMinutes(openingTime)
   const closingMinutes = parseTimeToMinutes(closingTime)
-  const nowMinutes = now.getHours() * 60 + now.getMinutes()
   const hasExplicitWindow = Boolean(openingTime || closingTime)
-  // If a restaurant provides only one side of the window, treat timings as not enforced
-  // (prevents accidental "offline" due to partial data).
-  const isWithinTimings = hasExplicitWindow
-    ? (openingMinutes !== null && closingMinutes !== null
-      ? isWithinTimeWindow(nowMinutes, openingMinutes, closingMinutes)
-      : true)
-    : true
-  const minutesUntilClose = isWithinTimings
-    ? getMinutesUntilClosing(nowMinutes, openingMinutes, closingMinutes)
-    : null
+  
+  // Also check if general timing is overnight and currently active in next-day context
+  let isWithinTimings = false
+  let minutesUntilClose = null
+
+  if (hasExplicitWindow && openingMinutes !== null && closingMinutes !== null) {
+    const isOvernight = closingMinutes < openingMinutes
+    
+    // Check if within today's window
+    if (isOvernight) {
+      isWithinTimings = nowMinutes >= openingMinutes || nowMinutes <= closingMinutes
+      minutesUntilClose = isWithinTimings
+        ? (nowMinutes <= closingMinutes ? closingMinutes - nowMinutes : (24 * 60 - nowMinutes) + closingMinutes)
+        : null
+    } else {
+      isWithinTimings = nowMinutes >= openingMinutes && nowMinutes <= closingMinutes
+      minutesUntilClose = isWithinTimings ? closingMinutes - nowMinutes : null
+    }
+  } else {
+    isWithinTimings = true
+  }
 
   return {
     isOpen: isWithinTimings,

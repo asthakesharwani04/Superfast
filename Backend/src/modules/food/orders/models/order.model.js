@@ -254,6 +254,22 @@ const deliveryVerificationSchema = new mongoose.Schema(
     { _id: false }
 );
 
+const reassignmentHistoryEntrySchema = new mongoose.Schema(
+    {
+        fromDriverId: { type: mongoose.Schema.Types.ObjectId, ref: 'FoodDeliveryPartner', default: null },
+        toDriverId: { type: mongoose.Schema.Types.ObjectId, ref: 'FoodDeliveryPartner', default: null },
+        reassignedByAdminId: { type: mongoose.Schema.Types.ObjectId, default: null },
+        statusAtReassignment: { type: String, default: '' },
+        reason: { type: String, default: '' },
+        driverAPayout: { type: Number, default: 0 },
+        driverAPayoutRule: { type: String, enum: ['none', 'flat', 'pro_rata'], default: 'none' },
+        reassignmentStatus: { type: String, enum: ['pending', 'accepted', 'rejected', 'timed_out'], default: 'pending' },
+        createdAt: { type: Date, default: Date.now },
+        resolvedAt: { type: Date, default: null }
+    },
+    { _id: true }
+);
+
 const orderSchema = new mongoose.Schema(
     {
         orderType: {
@@ -391,6 +407,22 @@ const orderSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'FoodCustomCakeRequest',
             default: null
+        },
+        reassignmentStatus: {
+            type: String,
+            enum: ['none', 'pending', 'accepted', 'rejected', 'timed_out'],
+            default: 'none',
+            index: true
+        },
+        pendingDriverId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'FoodDeliveryPartner',
+            default: null,
+            index: true
+        },
+        reassignmentHistory: {
+            type: [reassignmentHistoryEntrySchema],
+            default: []
         }
     },
     {
@@ -408,6 +440,59 @@ orderSchema.index({ 'dispatch.deliveryPartnerId': 1, orderStatus: 1 });
 orderSchema.index({ 'dispatch.status': 1, orderStatus: 1 });
 orderSchema.index({ 'payment.status': 1, createdAt: -1 });
 orderSchema.index({ 'payment.method': 1, createdAt: -1 });
+
+orderSchema.pre('save', async function (next) {
+    if (this.isModified('orderStatus') && ['delivered', 'cancelled_by_user', 'cancelled_by_restaurant', 'cancelled_by_admin'].includes(this.orderStatus)) {
+        if (this.reassignmentStatus === 'pending') {
+            const pendingDriverId = this.pendingDriverId;
+            this.reassignmentStatus = 'none';
+            this.pendingDriverId = null;
+
+            const lastEntry = this.reassignmentHistory[this.reassignmentHistory.length - 1];
+            if (lastEntry && lastEntry.reassignmentStatus === 'pending') {
+                lastEntry.reassignmentStatus = 'rejected';
+                lastEntry.resolvedAt = new Date();
+                lastEntry.reason = (lastEntry.reason || '') + ' [Voided: Order resolved/cancelled before accept]';
+            }
+
+            // Cancel timeout job
+            try {
+                const { getOrderQueue } = await import('../../../../queues/index.js');
+                const queue = getOrderQueue();
+                if (queue) {
+                    const job = await queue.getJob(`reassign:timeout:${this._id}`);
+                    if (job) {
+                        await job.remove().catch(() => {});
+                    }
+                }
+            } catch (err) {
+                // Ignore queue errors
+            }
+
+            // Emit sockets
+            try {
+                const { getIO, rooms } = await import('../../../../config/socket.js');
+                const io = getIO();
+                if (io) {
+                    io.to(rooms.admin(lastEntry?.reassignedByAdminId || 'all')).emit('reassignment_timed_out', {
+                        order_id: String(this.orderId || this._id),
+                        orderMongoId: String(this._id),
+                        message: `Order was resolved or cancelled (${this.orderStatus}) before reassignment completed`,
+                        order_still_with: String(this.dispatch?.deliveryPartnerId || '')
+                    });
+                    io.to(rooms.delivery(pendingDriverId)).emit('reassignment_request_expired', {
+                        order_id: String(this.orderId || this._id),
+                        orderMongoId: String(this._id),
+                        message: "Order cancelled or resolved"
+                    });
+                }
+            } catch (err) {
+                // Ignore socket errors
+            }
+        }
+    }
+    next();
+});
 
 export const FoodOrder = mongoose.model('FoodOrder', orderSchema, 'food_orders');
 

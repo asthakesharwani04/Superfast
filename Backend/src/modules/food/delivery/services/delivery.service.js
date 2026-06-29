@@ -649,7 +649,7 @@ const computeRange = (period, date) => {
     return { start: toStartOfDay(anchor), end: toEndOfDay(anchor) };
 };
 
-const toTripDto = (order) => {
+const toTripDto = (order, queryingDriverId) => {
     const createdAt = order?.createdAt || null;
     const deliveredAt = order?.deliveryState?.deliveredAt || order?.deliveredAt || order?.completedAt || null;
     const dateForUi = deliveredAt || createdAt || order?.updatedAt || null;
@@ -662,7 +662,14 @@ const toTripDto = (order) => {
     const isDelivered = orderStatus === 'delivered' || String(order?.deliveryState?.currentPhase || '').toLowerCase() === 'delivered';
     const isCancelled = orderStatus.startsWith('cancelled') || String(order?.deliveryState?.status || '').toLowerCase().includes('cancel');
 
-    const status = isDelivered ? 'Completed' : isCancelled ? 'Cancelled' : 'Pending';
+    const isReassignedFromMe = queryingDriverId && order?.reassignmentHistory?.some(
+        entry => String(entry.fromDriverId) === String(queryingDriverId) && entry.reassignmentStatus === 'accepted'
+    );
+
+    let status = isDelivered ? 'Completed' : isCancelled ? 'Cancelled' : 'Pending';
+    if (isReassignedFromMe) {
+        status = 'Reassigned';
+    }
 
     const restaurantName =
         order?.restaurantId?.restaurantName ||
@@ -680,7 +687,15 @@ const toTripDto = (order) => {
     const paymentMethod = order?.payment?.method || order?.paymentMethod || '';
     const pricingTotal = Number(order?.pricing?.total) || Number(order?.totalAmount) || 0;
 
-    const earningAmount = Number(order?.riderEarning ?? order?.deliveryEarning ?? 0) || 0;
+    let earningAmount = Number(order?.riderEarning ?? order?.deliveryEarning ?? 0) || 0;
+    let reassignmentReason = '';
+    if (isReassignedFromMe) {
+        const reassignedEntry = order.reassignmentHistory.find(
+            entry => String(entry.fromDriverId) === String(queryingDriverId) && entry.reassignmentStatus === 'accepted'
+        );
+        earningAmount = reassignedEntry ? Number(reassignedEntry.driverAPayout || 0) : 0;
+        reassignmentReason = reassignedEntry?.reason || '';
+    }
     const codAmount = paymentMethod === 'cash' ? Number(order?.payment?.amountDue) || 0 : 0;
     const codCollectedAmount = paymentMethod === 'cash' && order?.payment?.status === 'paid' ? codAmount : 0;
     return {
@@ -688,6 +703,7 @@ const toTripDto = (order) => {
         _id: order?._id,
         orderId: order?.orderId || order?._id,
         status,
+        reassignmentReason,
         restaurantName,
         restaurant: restaurantName,
         items: order?.items || order?.orderItems || [],
@@ -770,7 +786,12 @@ export const getDeliveryPartnerTripHistory = async (deliveryPartnerId, query = {
     const { start, end } = computeRange(period, date);
 
     const partnerId = new mongoose.Types.ObjectId(deliveryPartnerId);
-    const match = { 'dispatch.deliveryPartnerId': partnerId };
+    const match = {
+        $or: [
+            { 'dispatch.deliveryPartnerId': partnerId },
+            { 'reassignmentHistory.fromDriverId': partnerId }
+        ]
+    };
 
     const sf = String(statusFilter || '').toLowerCase();
     if (sf === 'completed') {
@@ -819,7 +840,7 @@ export const getDeliveryPartnerTripHistory = async (deliveryPartnerId, query = {
     ]);
 
     const trips = [
-        ...(orders || []).map(toTripDto),
+        ...(orders || []).map(o => toTripDto(o, partnerId)),
         ...(returns || []).map(toReturnTripDto)
     ].sort((a, b) => {
         const ad = a.date ? new Date(a.date).getTime() : 0;
@@ -885,7 +906,7 @@ export const getDeliveryPocketDetails = async (deliveryPartnerId, query = {}) =>
     ]);
 
     const trips = [
-        ...(orders || []).map(toTripDto),
+        ...(orders || []).map(o => toTripDto(o, partnerId)),
         ...(returns || []).map(toReturnTripDto)
     ].sort((a, b) => {
         const ad = a?.date ? new Date(a.date).getTime() : 0;

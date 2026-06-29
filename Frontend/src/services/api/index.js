@@ -592,6 +592,21 @@ export const adminAPI = {
     apiClient.post(`/food/admin/orders/${String(orderId)}/assign`, { deliveryPartnerId }, {
       contextModule: "admin",
     }),
+  reassignOrder: (orderId, new_driver_id, reason) =>
+    apiClient.post(`/food/admin/orders/${String(orderId)}/reassign`, {
+      new_driver_id,
+      reason
+    }, {
+      contextModule: "admin",
+    }),
+  getAvailableDriversForOrder: (orderId) =>
+    apiClient.get(`/food/admin/orders/${String(orderId)}/available-drivers`, {
+      contextModule: "admin",
+    }),
+  getReassignmentHistory: (orderId) =>
+    apiClient.get(`/food/admin/orders/${String(orderId)}/reassignment-history`, {
+      contextModule: "admin",
+    }),
   processRefund: (orderId, body = {}) =>
     apiClient.post(`/food/admin/orders/${String(orderId)}/refund`, body ?? {}, {
       contextModule: "admin",
@@ -1934,6 +1949,22 @@ export const deliveryAPI = {
     apiClient.patch(
       `/food/delivery/orders/${String(orderId)}/reject`,
       body ?? {},
+      {
+        contextModule: "delivery",
+      },
+    ),
+  acceptReassignment: (orderId) =>
+    apiClient.post(
+      `/food/delivery/orders/${String(orderId)}/reassignment/accept`,
+      {},
+      {
+        contextModule: "delivery",
+      },
+    ),
+  rejectReassignment: (orderId) =>
+    apiClient.post(
+      `/food/delivery/orders/${String(orderId)}/reassignment/reject`,
+      {},
       {
         contextModule: "delivery",
       },

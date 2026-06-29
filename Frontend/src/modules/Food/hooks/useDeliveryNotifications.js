@@ -143,6 +143,14 @@ const isActionableDeliveryOffer = (orderData = {}) => {
   if (orderData?.type === 'RETURN_PICKUP') {
     return Boolean(orderData?.returnId);
   }
+  if (orderData?.isReassignment || orderData?.reassignmentStatus === 'pending') {
+    return Boolean(
+      orderData?.orderId ||
+      orderData?.orderMongoId ||
+      orderData?._id ||
+      orderData?.id
+    );
+  }
   const orderStatus = String(
     orderData?.orderStatus || orderData?.status || ''
   ).trim().toLowerCase();
@@ -460,6 +468,7 @@ export const useDeliveryNotifications = () => {
 
       const recoverableOrder = availableOrders.find((order) => {
         if (order?.type === 'RETURN_PICKUP') return true;
+        if (order?.isReassignment || order?.reassignmentStatus === 'pending') return true;
         const dispatchStatus = String(order?.dispatch?.status || '').toLowerCase();
         const orderStatus = String(order?.orderStatus || order?.status || '').toLowerCase();
         return (
@@ -1029,6 +1038,46 @@ export const useDeliveryNotifications = () => {
         ...(statusData || {}),
         status: 'deleted'
       });
+    });
+
+    socketRef.current.on('new_reassignment_request', (reassignData) => {
+      debugLog('New reassignment request received via socket', reassignData);
+      const normalizedData = {
+        ...reassignData,
+        isReassignment: true,
+        orderId: reassignData.order_id || reassignData.orderMongoId,
+        orderMongoId: reassignData.orderMongoId
+      };
+      setNewOrder(normalizedData);
+      handleIncomingOrderAlert(normalizedData);
+    });
+
+    socketRef.current.on('order_reassigned_away', async (data) => {
+      debugLog('Order reassigned away from me:', data);
+      const orderMongoId = data?.orderMongoId || data?.order_mongo_id;
+      const currentActive = activeOrderRef.current;
+      if (currentActive && String(currentActive._id || currentActive.orderId || currentActive.id) === String(orderMongoId)) {
+         toast.error('Order Reassigned by Admin', {
+            description: data.message || 'This order has been reassigned to another delivery partner.'
+         });
+         stopAlertLoop();
+         activeOrderRef.current = null;
+         setNewOrder(null);
+         try {
+             const { useDeliveryStore } = await import('@/modules/DeliveryV2/store/useDeliveryStore');
+             useDeliveryStore.getState().clearActiveOrder();
+         } catch (err) {
+             console.warn('Could not clear active order store directly:', err);
+         }
+         setTimeout(() => {
+             window.location.reload();
+         }, 1500);
+      }
+    });
+
+    socketRef.current.on('order_now_active', (data) => {
+       debugLog('Order now active for me:', data);
+       window.location.reload();
     });
 
     socketRef.current.on('order_reassigned_elsewhere', (data) => {

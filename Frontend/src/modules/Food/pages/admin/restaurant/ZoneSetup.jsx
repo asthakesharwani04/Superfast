@@ -27,12 +27,21 @@ export default function ZoneSetup() {
   }, [selectedZone])
 
   const handleRankChange = async (restaurantId, newRank) => {
+    const rankNum = Number(newRank)
+    if (rankNum > 0) {
+      const alreadyAssigned = restaurants.find(r => Number(r.priority) === rankNum && (r._id || r.id) !== restaurantId)
+      if (alreadyAssigned) {
+        alert(`Rank ${rankNum} is already assigned to "${alreadyAssigned.restaurantName || alreadyAssigned.name}". Please choose another rank.`)
+        return
+      }
+    }
+
     try {
-      await adminAPI.updateRestaurant(restaurantId, { priority: Number(newRank) })
+      await adminAPI.updateRestaurant(restaurantId, { priority: rankNum })
       setRestaurants(prev => {
         const updated = prev.map(r => {
           if ((r._id || r.id) === restaurantId) {
-            return { ...r, priority: Number(newRank) }
+            return { ...r, priority: rankNum }
           }
           return r
         })
@@ -46,6 +55,11 @@ export default function ZoneSetup() {
       debugError("Error updating restaurant rank:", error)
       alert("Failed to update rank")
     }
+  }
+
+  const isRankTaken = (rankValue, currentRestaurantId) => {
+    if (rankValue === 0) return false
+    return restaurants.some(r => Number(r.priority) === Number(rankValue) && (r._id || r.id) !== currentRestaurantId)
   }
 
   const fetchRestaurants = async (zoneId) => {
@@ -186,11 +200,15 @@ export default function ZoneSetup() {
                             className="bg-white border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-800"
                           >
                             <option value={0}>None</option>
-                            {[...Array(10)].map((_, i) => (
-                              <option key={i + 1} value={i + 1}>
-                                {i + 1}
-                              </option>
-                            ))}
+                            {[...Array(10)].map((_, i) => {
+                              const rankVal = i + 1
+                              const isTaken = isRankTaken(rankVal, restaurant._id || restaurant.id)
+                              return (
+                                <option key={rankVal} value={rankVal}>
+                                  {rankVal} {isTaken ? "(Taken)" : ""}
+                                </option>
+                              )
+                            })}
                           </select>
                         </td>
                         <td className="px-6 py-4">

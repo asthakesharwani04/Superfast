@@ -1304,7 +1304,8 @@ const toRestaurantSummary = (doc) => {
         rating: normalizeRatingValue(doc.rating),
         totalRatings: normalizeTotalRatingsValue(doc.totalRatings),
         pureVegRestaurant: Boolean(doc.pureVegRestaurant),
-        slug: doc.slug || doc.restaurantNameNormalized || ''
+        slug: doc.slug || doc.restaurantNameNormalized || '',
+        priority: doc.priority ?? 0
     };
 };
 
@@ -1404,8 +1405,40 @@ export const listApprovedRestaurants = async (query = {}) => {
         closingTime: 1,
         openDays: 1,
         slug: 1,
-        restaurantNameNormalized: 1
+        restaurantNameNormalized: 1,
+        priority: 1
     };
+
+    // Calculate adjusted priorities if zoneId is provided
+    const adjustedPriorities = {};
+    const trimmedZoneId = String(query.zoneId || '').trim();
+    if (trimmedZoneId && mongoose.Types.ObjectId.isValid(trimmedZoneId)) {
+        try {
+            const zoneRestaurants = await FoodRestaurant.find({ 
+                zoneId: new mongoose.Types.ObjectId(trimmedZoneId), 
+                status: 'approved' 
+            })
+            .select('priority isAcceptingOrders')
+            .lean();
+
+            const rankedRestaurants = zoneRestaurants
+                .filter(r => r.priority > 0)
+                .sort((a, b) => a.priority - b.priority);
+
+            let onlineRank = 1;
+            let offlineRank = rankedRestaurants.filter(r => r.isAcceptingOrders !== false).length + 1;
+
+            for (const r of rankedRestaurants) {
+                if (r.isAcceptingOrders !== false) {
+                    adjustedPriorities[String(r._id)] = onlineRank++;
+                } else {
+                    adjustedPriorities[String(r._id)] = offlineRank++;
+                }
+            }
+        } catch (err) {
+            console.error('Failed to calculate adjusted priorities:', err);
+        }
+    }
 
     // Use $geoNear only when geo is explicitly needed (radius filter or nearest sorting).
     // This avoids accidentally hiding restaurants that do not have coordinates yet.
@@ -1424,21 +1457,33 @@ export const listApprovedRestaurants = async (query = {}) => {
         }
 
         const sortStage = (() => {
-            if (sortBy === 'rating' || sortBy === 'rating-high') return { $sort: { rating: -1, distanceMeters: 1 } };
-            if (sortBy === 'rating-low') return { $sort: { rating: 1, distanceMeters: 1 } };
-            if (sortBy === 'price-low') return { $sort: { featuredPrice: 1, distanceMeters: 1 } };
-            if (sortBy === 'price-high') return { $sort: { featuredPrice: -1, distanceMeters: 1 } };
-            if (sortBy === 'newest') return { $sort: { createdAt: -1 } };
-            if (sortBy === 'deliveryTime') return { $sort: { estimatedDeliveryTimeMinutes: 1, distanceMeters: 1 } };
+            if (sortBy === 'rating' || sortBy === 'rating-high') return { $sort: { isAcceptingOrders: -1, rating: -1, distanceMeters: 1 } };
+            if (sortBy === 'rating-low') return { $sort: { isAcceptingOrders: -1, rating: 1, distanceMeters: 1 } };
+            if (sortBy === 'price-low') return { $sort: { isAcceptingOrders: -1, featuredPrice: 1, distanceMeters: 1 } };
+            if (sortBy === 'price-high') return { $sort: { isAcceptingOrders: -1, featuredPrice: -1, distanceMeters: 1 } };
+            if (sortBy === 'newest') return { $sort: { isAcceptingOrders: -1, createdAt: -1 } };
+            if (sortBy === 'deliveryTime') return { $sort: { isAcceptingOrders: -1, estimatedDeliveryTimeMinutes: 1, distanceMeters: 1 } };
             // nearest (default)
-            return { $sort: { distanceMeters: 1 } };
+            return { $sort: { isAcceptingOrders: -1, effectivePriority: 1, distanceMeters: 1 } };
         })();
 
         const basePipeline = [
             geoNear,
             {
                 $addFields: {
-                    distanceInKm: { $round: [{ $divide: ['$distanceMeters', 1000] }, 2] }
+                    distanceInKm: { $round: [{ $divide: ['$distanceMeters', 1000] }, 2] },
+                    effectivePriority: {
+                        $cond: {
+                            if: {
+                                $and: [
+                                    { $gt: [ "$priority", 0 ] },
+                                    { $ne: [ "$priority", null ] }
+                                ]
+                            },
+                            then: "$priority",
+                            else: 999999
+                        }
+                    }
                 }
             },
             sortStage
@@ -1458,8 +1503,13 @@ export const listApprovedRestaurants = async (query = {}) => {
         return {
             restaurants: docs.map(doc => {
                 const summary = toRestaurantSummary(doc);
-                if (summary && doc.distanceInKm !== undefined) {
-                    summary.distanceInKm = doc.distanceInKm;
+                if (summary) {
+                    if (doc.distanceInKm !== undefined) {
+                        summary.distanceInKm = doc.distanceInKm;
+                    }
+                    if (adjustedPriorities[String(doc._id)] !== undefined) {
+                        summary.priority = adjustedPriorities[String(doc._id)];
+                    }
                 }
                 return summary;
             }), total, page, limit
@@ -1468,27 +1518,58 @@ export const listApprovedRestaurants = async (query = {}) => {
 
     // Non-geo path: normal query + sort.
     const sort = (() => {
-        if (sortBy === 'rating' || sortBy === 'rating-high') return { rating: -1, createdAt: -1 };
-        if (sortBy === 'rating-low') return { rating: 1, createdAt: -1 };
-        if (sortBy === 'price-low') return { featuredPrice: 1, createdAt: -1 };
-        if (sortBy === 'price-high') return { featuredPrice: -1, createdAt: -1 };
-        if (sortBy === 'deliveryTime') return { estimatedDeliveryTimeMinutes: 1, createdAt: -1 };
-        return { createdAt: -1 };
+        if (sortBy === 'rating' || sortBy === 'rating-high') return { isAcceptingOrders: -1, rating: -1, createdAt: -1 };
+        if (sortBy === 'rating-low') return { isAcceptingOrders: -1, rating: 1, createdAt: -1 };
+        if (sortBy === 'price-low') return { isAcceptingOrders: -1, featuredPrice: 1, createdAt: -1 };
+        if (sortBy === 'price-high') return { isAcceptingOrders: -1, featuredPrice: -1, createdAt: -1 };
+        if (sortBy === 'deliveryTime') return { isAcceptingOrders: -1, estimatedDeliveryTimeMinutes: 1, createdAt: -1 };
+        return { isAcceptingOrders: -1, effectivePriority: 1, createdAt: -1 };
     })();
 
-    const [restaurantsRaw, total] = await Promise.all([
-        FoodRestaurant.find(filter)
-            .select(Object.keys(projection).join(' '))
-            .sort(sort)
-            .skip(skip)
-            .limit(limit)
-            .lean(),
-        FoodRestaurant.countDocuments(filter)
+    const basePipeline = [
+        { $match: filter },
+        {
+            $addFields: {
+                effectivePriority: {
+                    $cond: {
+                        if: {
+                            $and: [
+                                { $gt: [ "$priority", 0 ] },
+                                { $ne: [ "$priority", null ] }
+                            ]
+                        },
+                        then: "$priority",
+                        else: 999999
+                    }
+                }
+            }
+        },
+        { $sort: sort }
+    ];
+
+    const [docs, totalCountAggr] = await Promise.all([
+        FoodRestaurant.aggregate([
+            ...basePipeline,
+            { $skip: skip },
+            { $limit: limit },
+            { $project: projection }
+        ]),
+        FoodRestaurant.aggregate([...basePipeline, { $count: 'total' }])
     ]);
 
-    const restaurants = (restaurantsRaw || []).map(toRestaurantSummary);
+    const total = totalCountAggr[0]?.total || 0;
 
-    return { restaurants, total, page, limit };
+    return {
+        restaurants: docs.map(doc => {
+            const summary = toRestaurantSummary(doc);
+            if (summary) {
+                if (adjustedPriorities[String(doc._id)] !== undefined) {
+                    summary.priority = adjustedPriorities[String(doc._id)];
+                }
+            }
+            return summary;
+        }), total, page, limit
+    };
 };
 
 export const getApprovedRestaurantByIdOrSlug = async (idOrSlug) => {

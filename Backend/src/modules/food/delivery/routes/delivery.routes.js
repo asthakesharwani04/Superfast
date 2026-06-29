@@ -48,6 +48,9 @@ router.patch('/orders/:orderId/status', authMiddleware, requireRoles('DELIVERY_P
 router.post('/orders/:orderId/collect/qr', authMiddleware, requireRoles('DELIVERY_PARTNER'), orderController.createCollectQrController);
 router.get('/orders/:orderId/payment-status', authMiddleware, requireRoles('DELIVERY_PARTNER'), orderController.getPaymentStatusController);
 
+router.post('/orders/:orderId/reassignment/accept', authMiddleware, requireRoles('DELIVERY_PARTNER'), orderController.acceptReassignmentDeliveryController);
+router.post('/orders/:orderId/reassignment/reject', authMiddleware, requireRoles('DELIVERY_PARTNER'), orderController.rejectReassignmentDeliveryController);
+
 // ----- Earnings / Settings -----
 router.get('/earning-addons/active', authMiddleware, requireRoles('DELIVERY_PARTNER'), getActiveEarningAddonsController);
 router.post('/reverify', authMiddleware, requireRoles('DELIVERY_PARTNER'), (req, res) => res.json({ success: true, message: 'Submitted' })); // Stub

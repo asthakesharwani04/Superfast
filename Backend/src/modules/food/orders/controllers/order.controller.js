@@ -378,3 +378,64 @@ export async function resendDeliveryNotificationRestaurantController(req, res, n
     }
 }
 
+export async function reassignDeliveryPartnerController(req, res, next) {
+    try {
+        const adminId = req.user?.userId;
+        const orderId = req.params.orderId;
+        const { new_driver_id, reason } = req.body;
+        const order = await orderService.reassignDeliveryPartnerAdmin(orderId, {
+            newDriverId: new_driver_id,
+            reason,
+            adminId
+        });
+        return sendResponse(res, 200, 'Reassignment triggered successfully', {
+            order,
+            pending_driver: { id: new_driver_id }
+        });
+    } catch (err) {
+        next(err);
+    }
+}
+
+export async function getAvailableDriversForOrderController(req, res, next) {
+    try {
+        const orderId = req.params.orderId;
+        const drivers = await orderService.getAvailableDriversForOrder(orderId);
+        return sendResponse(res, 200, 'Available drivers retrieved', { drivers });
+    } catch (err) {
+        next(err);
+    }
+}
+
+export async function getReassignmentHistoryController(req, res, next) {
+    try {
+        const orderId = req.params.orderId;
+        const history = await orderService.getReassignmentHistory(orderId);
+        return sendResponse(res, 200, 'Reassignment history retrieved', { history });
+    } catch (err) {
+        next(err);
+    }
+}
+
+export async function acceptReassignmentDeliveryController(req, res, next) {
+    try {
+        const driverId = req.user?.userId;
+        const orderId = req.params.orderId;
+        const result = await orderService.acceptReassignmentDelivery(orderId, driverId);
+        return sendResponse(res, 200, 'Reassignment accepted successfully', result);
+    } catch (err) {
+        next(err);
+    }
+}
+
+export async function rejectReassignmentDeliveryController(req, res, next) {
+    try {
+        const driverId = req.user?.userId;
+        const orderId = req.params.orderId;
+        await orderService.rejectReassignmentDelivery(orderId, driverId);
+        return sendResponse(res, 200, 'Reassignment rejected successfully');
+    } catch (err) {
+        next(err);
+    }
+}
+

@@ -93,13 +93,17 @@ router.patch('/profile', authMiddleware, requireRestaurant, async (req, res, nex
 }, updateRestaurantProfileController);
 router.patch('/availability', authMiddleware, requireRestaurant, async (req, res, next) => {
     await invalidateCache('restaurants:*');
+    await invalidateCache('restaurant_detail:*');
     next();
 }, updateRestaurantAcceptingOrdersController);
-router.patch('/profile', authMiddleware, requireRestaurant, updateRestaurantProfileController);
-router.patch('/availability', authMiddleware, requireRestaurant, updateRestaurantAcceptingOrdersController);
 router.patch('/dining-settings', authMiddleware, requireRestaurant, updateCurrentRestaurantDiningSettingsController);
 router.get('/outlet-timings', authMiddleware, requireRestaurant, getCurrentRestaurantOutletTimingsController);
-router.put('/outlet-timings', authMiddleware, requireRestaurant, upsertCurrentRestaurantOutletTimingsController);
+router.put('/outlet-timings', authMiddleware, requireRestaurant, async (req, res, next) => {
+    await invalidateCache('restaurant_timings:*');
+    await invalidateCache('restaurants:*');
+    await invalidateCache('restaurant_detail:*');
+    next();
+}, upsertCurrentRestaurantOutletTimingsController);
 router.get('/finance', authMiddleware, requireRestaurant, getRestaurantFinanceController);
 router.post('/withdraw', authMiddleware, requireRestaurant, createWithdrawalRequestController);
 router.get('/withdrawals', authMiddleware, requireRestaurant, listMyWithdrawalsController);

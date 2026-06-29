@@ -27,6 +27,16 @@ export const processOrderJob = async (job) => {
         }
     }
 
+    // Handle Reassignment Timeout
+    if (action === 'REASSIGNMENT_TIMEOUT') {
+        try {
+            const { processReassignmentTimeout } = await import('../../../modules/food/orders/services/order.service.js');
+            await processReassignmentTimeout(orderMongoId, data.pendingDriverId);
+        } catch (err) {
+            logger.error(`[BullMQ:order] REASSIGNMENT_TIMEOUT failed: ${err.message}`);
+        }
+    }
+
     // Handle Scheduled Order Activation
     if (action === 'NOTIFY_SCHEDULED_ORDER') {
         try {

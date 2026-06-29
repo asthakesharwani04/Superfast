@@ -200,6 +200,9 @@ router.get('/orders/:orderId', orderController.getOrderByIdAdminController);
 router.post('/orders/:orderId/refund', adminController.processRefund);
 router.delete('/orders/:orderId', orderController.deleteOrderAdminController);
 router.post('/orders/:orderId/assign', orderController.assignDeliveryPartnerController);
+router.post('/orders/:orderId/reassign', orderController.reassignDeliveryPartnerController);
+router.get('/orders/:orderId/available-drivers', orderController.getAvailableDriversForOrderController);
+router.get('/orders/:orderId/reassignment-history', orderController.getReassignmentHistoryController);
 
 // ----- CMS Pages (About + legal) -----
 router.get('/pages-social-media/:key', getAdminPageController);

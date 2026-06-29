@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react"
 import { Eye, MapPin, Package, User, Phone, Mail, Calendar, Clock, Truck, CreditCard, X, Receipt, CheckCircle2 } from "lucide-react"
 import {
   Dialog,
@@ -38,6 +39,61 @@ const getPaymentStatusColor = (paymentStatus) => {
 }
 
 export default function ViewOrderDialog({ isOpen, onOpenChange, order }) {
+  const [showReassignModal, setShowReassignModal] = useState(false);
+  const [availableDrivers, setAvailableDrivers] = useState([]);
+  const [selectedDriverId, setSelectedDriverId] = useState("");
+  const [reassignReason, setReassignReason] = useState("");
+  const [isLoadingDrivers, setIsLoadingDrivers] = useState(false);
+  const [isSubmittingReassign, setIsSubmittingReassign] = useState(false);
+  const [reassignMessage, setReassignMessage] = useState(null);
+  const [countdown, setCountdown] = useState(0);
+
+  useEffect(() => {
+    let timer;
+    const lastEntry = order?.reassignmentHistory?.[order.reassignmentHistory.length - 1];
+    if (order?.reassignmentStatus === 'pending' && lastEntry) {
+      const calculateRemaining = () => {
+        const elapsed = Math.floor((Date.now() - new Date(lastEntry.createdAt).getTime()) / 1000);
+        return Math.max(0, 60 - elapsed);
+      };
+      setCountdown(calculateRemaining());
+
+      timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      setCountdown(0);
+    }
+    return () => clearInterval(timer);
+  }, [order?.reassignmentStatus, order?.reassignmentHistory]);
+
+  const fetchAvailableDrivers = async () => {
+    if (!order) return;
+    setIsLoadingDrivers(true);
+    try {
+      const { adminAPI } = await import('@/services/api');
+      const res = await adminAPI.getAvailableDriversForOrder(order.id || order._id);
+      const list = res?.data?.data?.drivers || res?.data?.drivers || [];
+      setAvailableDrivers(list);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingDrivers(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showReassignModal) {
+      fetchAvailableDrivers();
+    }
+  }, [showReassignModal]);
+
   if (!order) return null
 
   // Debug: Log order data to check billImageUrl
@@ -379,10 +435,31 @@ export default function ViewOrderDialog({ isOpen, onOpenChange, order }) {
           {/* Delivery Partner Information */}
           {(order.deliveryPartnerName || order.deliveryPartnerPhone) && (
             <div className="border-t border-slate-200 pt-4">
-              <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                <Truck className="w-4 h-4" />
-                Delivery Partner
-              </h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2 m-0">
+                  <Truck className="w-4 h-4" />
+                  Delivery Partner
+                </h3>
+                {['created', 'confirmed', 'preparing', 'ready_for_pickup', 'picked_up'].includes(order.orderStatus) && (
+                  <button
+                    type="button"
+                    disabled={order.reassignmentStatus === 'pending' || countdown > 0}
+                    onClick={() => setShowReassignModal(true)}
+                    className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg transition-colors shadow-sm"
+                  >
+                    Reassign Driver
+                  </button>
+                )}
+              </div>
+              {(order.reassignmentStatus === 'pending' || countdown > 0) && (
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between text-xs text-amber-800">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 animate-pulse" />
+                    <span>Reassignment offer pending acceptance...</span>
+                  </div>
+                  <span className="font-bold text-sm bg-amber-100 px-2 py-0.5 rounded">{countdown}s</span>
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {order.deliveryPartnerName && (
                   <div className="space-y-1">
@@ -455,6 +532,111 @@ export default function ViewOrderDialog({ isOpen, onOpenChange, order }) {
             </div>
           </div>
         </div>
+
+        {/* Reassign Driver Modal */}
+        {showReassignModal && (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[400] flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-200 text-slate-800">
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 className="text-base font-bold text-slate-950 flex items-center gap-2">
+                  <Truck className="w-5 h-5 text-orange-600" />
+                  Reassign Delivery Partner
+                </h3>
+                <button 
+                  type="button"
+                  onClick={() => { setShowReassignModal(false); setReassignMessage(null); }}
+                  className="p-1 hover:bg-slate-50 rounded-lg text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="p-6 space-y-4">
+                {reassignMessage && (
+                  <div className={`p-3 rounded-lg text-xs font-semibold ${
+                    reassignMessage.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                  }`}>
+                    {reassignMessage.text}
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Available Drivers</label>
+                  {isLoadingDrivers ? (
+                    <p className="text-xs text-slate-400 py-2">Searching nearby online drivers...</p>
+                  ) : availableDrivers.length === 0 ? (
+                    <p className="text-xs text-red-500 py-2">No available drivers found nearby</p>
+                  ) : (
+                    <select
+                      value={selectedDriverId}
+                      onChange={(e) => setSelectedDriverId(e.target.value)}
+                      className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                    >
+                      <option value="">Select a driver...</option>
+                      {availableDrivers.map((driver) => (
+                        <option key={driver._id} value={driver._id}>
+                          {driver.name} ({driver.distanceKm} km away)
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Reason for Reassignment</label>
+                  <textarea
+                    value={reassignReason}
+                    onChange={(e) => setReassignReason(e.target.value)}
+                    placeholder="Optional reason..."
+                    rows={3}
+                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => { setShowReassignModal(false); setReassignMessage(null); }}
+                  className="px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isSubmittingReassign || !selectedDriverId}
+                  onClick={async () => {
+                    setIsSubmittingReassign(true);
+                    try {
+                      const { adminAPI } = await import('@/services/api');
+                      const res = await adminAPI.reassignOrder(order.id || order._id, selectedDriverId, reassignReason);
+                      if (res?.data?.success || res?.success) {
+                        setReassignMessage({ type: 'success', text: 'Reassignment request sent to the driver successfully!' });
+                        setTimeout(() => {
+                          setShowReassignModal(false);
+                          setReassignMessage(null);
+                          setSelectedDriverId("");
+                          setReassignReason("");
+                          onOpenChange(false); // Close details dialog
+                        }, 2000);
+                      } else {
+                        setReassignMessage({ type: 'error', text: res?.data?.message || 'Failed to reassign driver' });
+                      }
+                    } catch (err) {
+                      setReassignMessage({ type: 'error', text: err?.response?.data?.message || err?.message || 'Failed to reassign driver' });
+                    } finally {
+                      setIsSubmittingReassign(false);
+                    }
+                  }}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700 disabled:bg-slate-300 rounded-lg shadow-sm"
+                >
+                  {isSubmittingReassign ? 'Reassigning...' : 'Confirm Reassign'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )

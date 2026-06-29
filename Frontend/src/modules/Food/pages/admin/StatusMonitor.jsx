@@ -1,7 +1,9 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { adminAPI } from "@food/api";
 import { getGoogleMapsApiKey } from "@food/utils/googleMapsApiKey";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import io from "socket.io-client";
 import {
   Search,
   MapPin,
@@ -48,6 +50,14 @@ const mockRestaurants = [
 
 export default function StatusMonitor() {
   const [activeToggle, setActiveToggle] = useState("partners"); // "restaurants" or "partners"
+  const [activeReassignOrder, setActiveReassignOrder] = useState(null);
+  const [showReassignModal, setShowReassignModal] = useState(false);
+  const [availableDrivers, setAvailableDrivers] = useState([]);
+  const [selectedDriverId, setSelectedDriverId] = useState("");
+  const [reassignReason, setReassignReason] = useState("");
+  const [isLoadingDrivers, setIsLoadingDrivers] = useState(false);
+  const [isSubmittingReassign, setIsSubmittingReassign] = useState(false);
+  const [reassignMessage, setReassignMessage] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPartnerId, setSelectedPartnerId] = useState(null);
   const [selectedRestaurantId, setSelectedRestaurantId] = useState(null);
@@ -254,26 +264,85 @@ export default function StatusMonitor() {
     loadData();
   }, []);
 
-  // Fetch orders for the selected partner when selectedPartnerId changes
-  useEffect(() => {
+  const fetchOrdersForActivePartner = useCallback(async () => {
     if (!selectedPartnerId) {
       setPartnerOrders([]);
       return;
     }
-    async function fetchOrders() {
-      setLoadingOrders(true);
-      try {
-        const ordersRes = await adminAPI.getOrders({ deliveryPartnerId: selectedPartnerId, limit: 10 });
-        const ordersList = ordersRes?.data?.data?.orders || ordersRes?.data?.orders || [];
-        setPartnerOrders(ordersList);
-      } catch (err) {
-        console.error("Failed to load partner orders:", err);
-      } finally {
-        setLoadingOrders(false);
-      }
+    setLoadingOrders(true);
+    try {
+      const ordersRes = await adminAPI.getOrders({ deliveryPartnerId: selectedPartnerId, limit: 10 });
+      const ordersList = ordersRes?.data?.data?.orders || ordersRes?.data?.orders || [];
+      setPartnerOrders(ordersList);
+    } catch (err) {
+      console.error("Failed to load partner orders:", err);
+    } finally {
+      setLoadingOrders(false);
     }
-    fetchOrders();
   }, [selectedPartnerId]);
+
+  useEffect(() => {
+    fetchOrdersForActivePartner();
+  }, [fetchOrdersForActivePartner]);
+
+  const handleReassignClick = async (order) => {
+    setActiveReassignOrder(order);
+    setShowReassignModal(true);
+    setIsLoadingDrivers(true);
+    try {
+      const res = await adminAPI.getAvailableDriversForOrder(order._id || order.id);
+      const list = res?.data?.data?.drivers || res?.data?.drivers || [];
+      setAvailableDrivers(list);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingDrivers(false);
+    }
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem("admin_accessToken") || localStorage.getItem("accessToken");
+    const resolveSocketOrigin = (value) => {
+      const raw = String(value || "").trim();
+      if (!raw) return "";
+      try {
+        return new URL(raw).origin;
+      } catch {
+        return raw.replace(/\/api\/v\d+\/?$/i, "").replace(/\/api\/?$/i, "").replace(/\/+$/, "");
+      }
+    };
+    const socketOrigin = import.meta.env.VITE_API_URL || window.location.origin;
+    if (!token || !socketOrigin) return undefined;
+
+    const socket = io(resolveSocketOrigin(socketOrigin), {
+      path: "/socket.io/",
+      transports: ["websocket", "polling"],
+      auth: { token },
+    });
+
+    socket.on("reassignment_complete", (data) => {
+      toast.success("Order Reassignment Complete!");
+      fetchOrdersForActivePartner();
+      adminAPI.getDeliveryPartners({ limit: 1000 }).then(res => {
+         const partnersList = res?.data?.data?.deliveryPartners || res?.data?.deliveryPartners || [];
+         setPartners(partnersList);
+      }).catch(err => console.error(err));
+    });
+
+    socket.on("driver_rejected_reassignment", (data) => {
+      toast.error("Reassignment Rejected by driver.");
+      fetchOrdersForActivePartner();
+    });
+
+    socket.on("reassignment_timed_out", (data) => {
+      toast.error("Reassignment Timed Out.");
+      fetchOrdersForActivePartner();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [fetchOrdersForActivePartner]);
 
   // Actions
   const handleToggleOnline = async (id) => {
@@ -586,7 +655,19 @@ export default function StatusMonitor() {
                                   <span className="font-bold text-neutral-800 dark:text-white">Order #{o.orderId || o._id}</span>
                                   <span className="block text-neutral-400 truncate max-w-[140px]">{o.restaurantId?.restaurantName || "Direct Order"}</span>
                                 </div>
-                                <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-bold uppercase">{o.orderStatus}</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded font-bold uppercase text-[9px]">{o.orderStatus}</span>
+                                  {!['delivered', 'cancelled_by_user', 'cancelled_by_restaurant', 'cancelled_by_admin'].includes(o.orderStatus) && (
+                                    <button
+                                      type="button"
+                                      disabled={o.reassignmentStatus === 'pending'}
+                                      onClick={() => handleReassignClick(o)}
+                                      className="px-1.5 py-0.5 bg-orange-600 hover:bg-orange-700 disabled:bg-neutral-300 disabled:text-neutral-500 text-white rounded font-bold text-[9px] uppercase transition-colors"
+                                    >
+                                      {o.reassignmentStatus === 'pending' ? 'Pending' : 'Reassign'}
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -784,6 +865,109 @@ export default function StatusMonitor() {
               </button>
             </div>
           </motion.div>
+        </div>
+      )}
+      {/* Reassign Driver Modal */}
+      {showReassignModal && activeReassignOrder && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111115] rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-neutral-800 animate-in fade-in zoom-in-95 duration-200 text-slate-800 dark:text-neutral-200">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-neutral-800 flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-950 dark:text-white flex items-center gap-2">
+                <Truck className="w-5 h-5 text-orange-600" />
+                Reassign Delivery Partner
+              </h3>
+              <button 
+                type="button"
+                onClick={() => { setShowReassignModal(false); setReassignMessage(null); }}
+                className="p-1 hover:bg-slate-50 dark:hover:bg-neutral-800 rounded-lg text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {reassignMessage && (
+                <div className={`p-3 rounded-lg text-xs font-semibold ${
+                  reassignMessage.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                }`}>
+                  {reassignMessage.text}
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Available Drivers</label>
+                {isLoadingDrivers ? (
+                  <p className="text-xs text-slate-400 py-2">Searching nearby online drivers...</p>
+                ) : availableDrivers.length === 0 ? (
+                  <p className="text-xs text-red-500 py-2">No available drivers found nearby</p>
+                ) : (
+                  <select
+                    value={selectedDriverId}
+                    onChange={(e) => setSelectedDriverId(e.target.value)}
+                    className="w-full text-sm border border-slate-200 dark:border-neutral-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200"
+                  >
+                    <option value="">Select a driver...</option>
+                    {availableDrivers.map((driver) => (
+                      <option key={driver._id} value={driver._id}>
+                        {driver.name} ({driver.distanceKm} km away)
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Reason for Reassignment</label>
+                <textarea
+                  value={reassignReason}
+                  onChange={(e) => setReassignReason(e.target.value)}
+                  placeholder="Optional reason..."
+                  rows={3}
+                  className="w-full text-sm border border-slate-200 dark:border-neutral-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200"
+                />
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50 dark:bg-neutral-900/50 border-t border-slate-100 dark:border-neutral-800 flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => { setShowReassignModal(false); setReassignMessage(null); }}
+                className="px-4 py-2 text-sm font-semibold text-slate-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-700 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingReassign || !selectedDriverId}
+                onClick={async () => {
+                  setIsSubmittingReassign(true);
+                  try {
+                    const res = await adminAPI.reassignOrder(activeReassignOrder._id || activeReassignOrder.id, selectedDriverId, reassignReason);
+                    if (res?.data?.success || res?.success) {
+                      setReassignMessage({ type: 'success', text: 'Reassignment request sent to the driver successfully!' });
+                      setTimeout(() => {
+                        setShowReassignModal(false);
+                        setReassignMessage(null);
+                        setSelectedDriverId("");
+                        setReassignReason("");
+                        fetchOrdersForActivePartner();
+                      }, 2000);
+                    } else {
+                      setReassignMessage({ type: 'error', text: res?.data?.message || 'Failed to reassign driver' });
+                    }
+                  } catch (err) {
+                    setReassignMessage({ type: 'error', text: err?.response?.data?.message || err?.message || 'Failed to reassign driver' });
+                  } finally {
+                    setIsSubmittingReassign(false);
+                  }
+                }}
+                className="px-4 py-2 text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700 disabled:bg-slate-300 rounded-lg shadow-sm"
+              >
+                {isSubmittingReassign ? 'Reassigning...' : 'Confirm Reassign'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -43,10 +43,12 @@ export const useOrderManager = () => {
     }
 
     try {
-      const response = await deliveryAPI.acceptOrder(
-        orderId,
-        order?.dispatchLeg?.legId ? { legId: order.dispatchLeg.legId } : {},
-      );
+      const response = order?.isReassignment
+        ? await deliveryAPI.acceptReassignment(orderId)
+        : await deliveryAPI.acceptOrder(
+            orderId,
+            order?.dispatchLeg?.legId ? { legId: order.dispatchLeg.legId } : {},
+          );
       
       if (response?.data?.success) {
         const fullOrder = response.data.data?.order || order;
@@ -231,12 +233,30 @@ export const useOrderManager = () => {
     }
   };
 
+  const rejectOrder = async (order) => {
+    const orderId = order?.orderId || order?._id || order?.id;
+    if (!orderId) {
+      toast.error('Invalid order data');
+      return;
+    }
+    try {
+      if (order?.isReassignment) {
+        await deliveryAPI.rejectReassignment(orderId);
+      } else {
+        await deliveryAPI.rejectOrder(orderId);
+      }
+    } catch (error) {
+      console.error('Reject Order Error:', error);
+    }
+  };
+
   const resetTrip = () => {
     clearActiveOrder();
   };
 
   return {
     acceptOrder,
+    rejectOrder,
     reachPickup,
     pickUpOrder,
     reachDrop,

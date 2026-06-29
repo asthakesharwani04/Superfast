@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { ValidationError } from '../../../../core/auth/errors.js';
 import { FoodRestaurantOutletTimings } from '../models/outletTimings.model.js';
+import { FoodRestaurant } from '../models/restaurant.model.js';
 
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -82,6 +83,26 @@ export async function upsertOutletTimingsForRestaurant(restaurantId, outletTimin
         { $set: { timings } },
         { upsert: true, new: true, setDefaultsOnInsert: true, projection: 'timings updatedAt' }
     ).lean();
+
+    // Synchronize to the main FoodRestaurant document
+    const openDay = timings.find((t) => t.isOpen) || timings[0];
+    const generalOpeningTime = openDay ? openDay.openingTime : '09:00';
+    const generalClosingTime = openDay ? openDay.closingTime : '22:00';
+    const openDaysList = timings.filter((t) => t.isOpen).map((t) => t.day);
+
+    await FoodRestaurant.updateOne(
+        { _id: restaurantId },
+        {
+            $set: {
+                openingTime: generalOpeningTime,
+                closingTime: generalClosingTime,
+                openDays: openDaysList
+            }
+        }
+    ).catch((err) => {
+        // Log error but do not block the response
+        console.error(`Failed to sync outlet timings to FoodRestaurant: ${err.message}`);
+    });
 
     return { outletTimings: toClientShape(doc) };
 }

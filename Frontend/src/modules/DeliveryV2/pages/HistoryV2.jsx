@@ -241,7 +241,8 @@ export const HistoryV2 = () => {
                 {trips.map((trip, idx) => {
                    const isCompleted = (trip.status || '').toLowerCase() === 'completed';
                    const isCancelled = (trip.status || '').toLowerCase() === 'cancelled';
-                   const isPending = !isCompleted && !isCancelled;
+                   const isReassigned = (trip.status || '').toLowerCase() === 'reassigned';
+                   const isPending = !isCompleted && !isCancelled && !isReassigned;
                    const payout = Number(trip.deliveryEarning || trip.amount || trip.earningAmount || 0);
                    const collection = Number(trip.codCollectedAmount || trip.orderTotal || 0);
                    const isCOD = (trip.paymentMethod || '').toLowerCase() === 'cash' || (trip.paymentMethod || '').toLowerCase() === 'cod';
@@ -258,7 +259,7 @@ export const HistoryV2 = () => {
                                 <p className="text-sm font-medium text-gray-500 mt-0.5">{trip.restaurant || trip.restaurantName || 'Store/Restaurant'}</p>
                                 <p className="text-xs text-gray-400 font-medium mt-0.5 line-clamp-1">{extractItems(trip)}</p>
                              </div>
-                             <span className={`text-sm font-bold ${isCompleted ? 'text-[#10B981]' : isCancelled ? 'text-red-500' : 'text-orange-500'}`}>
+                             <span className={`text-sm font-bold ${isCompleted ? 'text-[#10B981]' : isCancelled ? 'text-red-500' : isReassigned ? 'text-orange-500' : 'text-orange-500'}`}>
                                 {trip.status || 'Status'}
                              </span>
                          </div>
@@ -268,6 +269,15 @@ export const HistoryV2 = () => {
                                 {isCOD ? 'COD' : 'Online'}
                              </span>
                          </div>
+
+                         {isReassigned && (
+                             <div className="mb-4 p-3 bg-orange-50 rounded-xl border border-orange-100 text-xs text-orange-800 space-y-1">
+                                 <p className="font-bold">Reassigned by Admin</p>
+                                 {trip.reassignmentReason && (
+                                     <p className="text-neutral-600 font-medium">Reason: {trip.reassignmentReason}</p>
+                                 )}
+                             </div>
+                         )}
 
                          <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-50">
                              <div>
